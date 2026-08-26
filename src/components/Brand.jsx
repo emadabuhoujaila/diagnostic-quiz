@@ -1,12 +1,18 @@
 import { Link } from 'react-router-dom'
 import { PLATFORM_NAME } from '../lib/constants'
 
-export function ConfigBanner({ configured }) {
+export function ConfigBanner({ configured, demoMode }) {
   if (configured) return null
   return (
     <div className="config-banner" role="status">
-      Firebase غير مربوط بعد — انسخ <code>.env.example</code> إلى{' '}
-      <code>.env.local</code> وأضف مفاتيح المشروع.
+      {demoMode
+        ? 'وضع تجريبي محلي — البيانات تُحفظ في المتصفح. اربط Firebase عبر .env.local عند الجاهزية.'
+        : (
+          <>
+            Firebase غير مربوط — انسخ <code>.env.example</code> إلى{' '}
+            <code>.env.local</code> وأضف مفاتيح المشروع.
+          </>
+        )}
     </div>
   )
 }

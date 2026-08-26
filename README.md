@@ -2,67 +2,47 @@
 
 منصة اختبارات تشخيصية لمادة الفيزياء (React + Vite + Firebase).
 
-## القرارات المعتمدة
+## الميزات
 
-| البند | القرار |
-|--------|--------|
-| أنواع الأسئلة | اختيار من متعدد، صح/خطأ، إجابة قصيرة، مطابقة، ترتيب |
-| المعلمون | عدة معلمين (Firebase Auth: إيميل + كلمة سر) |
-| الاختبارات | اختبار واحد لكل صف |
-| الطالب | دخول بالرقم الوزاري فقط |
-| التقنية | React + Vite |
+- دخول **معلم** (إيميل/كلمة سر) و**طالب** (الرقم الوزاري)
+- عدة معلمين · اختبار واحد لكل صف
+- رفع طلاب من **Excel**
+- رفع أسئلة من **PDF** (تحويل الصفحات لصور + تعريف كل أنواع الأسئلة)
+- أداء الاختبار للطالب مع **قفل الجلسة** عند مغادرة المتصفح
+- إدارة فتح القفل / السماح بإعادة المحاولة
+- نتائج تشخيصية أساسية
 
-## الخطوة الحالية: 1 — الأساس والدخول
+## أنواع الأسئلة
 
-- صفحة اختيار الدور (معلم / طالب)
-- دخول المعلم (تسجيل + إنشاء حساب)
-- دخول الطالب بالرقم الوزاري (مع رسائل الخطأ المتفق عليها)
-- لوحة معلم هيكل جاهز للخطوات التالية
-- قالب إعدادات Firebase بدون مفاتيح حقيقية
+اختيار من متعدد · صح/خطأ · إجابة قصيرة · مطابقة · ترتيب
 
-## الربط بـ Firebase لاحقاً
-
-1. أنشئ مشروعاً في [Firebase Console](https://console.firebase.google.com)
-2. فعّل **Authentication → Email/Password**
-3. أنشئ **Firestore** و **Storage**
-4. انسخ `.env.example` إلى `.env.local` واملأ القيم من إعدادات المشروع
-5. أعد تشغيل `npm run dev`
-
-### هيكل البيانات المقترح (Firestore)
-
-```
-teachers/{uid}
-  email, displayName, createdAt, role
-
-students/{autoId}
-  ministryId, name, gradeId, section, teacherId, createdAt
-
-exams/{autoId}
-  gradeId, title, published, pdfUrl, pages[], questions[], teacherId, updatedAt
-  # اختبار واحد لكل gradeId
-
-sessions/{autoId}
-  ministryId, examId, status, answers, lockedAt, attemptCount
-  # status: waiting | in_progress | locked | submitted | allowed_retry
-```
-
-## التشغيل محلياً
+## التشغيل
 
 ```bash
 npm install
-cp .env.example .env.local   # ثم املأ المفاتيح
+cp .env.example .env.local   # املأ مفاتيح Firebase عند الجاهزية
 npm run dev
 ```
 
-```bash
-npm run build
+بدون `.env.local` تعمل المنصة في **وضع تجريبي محلي** (localStorage) لتجربة المسار كاملاً.
+
+### مسار تجريبي سريع
+
+1. معلم → إنشاء حساب → رفع Excel (أو تنزيل القالب) → رفع PDF → إضافة أسئلة → نشر
+2. طالب → الرقم الوزاري من الملف → بدء الاختبار
+3. مغادرة التبويب تقفل الجلسة → المعلم يفتح القفل من «إدارة الجلسات»
+
+## ربط Firebase
+
+1. فعّل Authentication (Email/Password)
+2. أنشئ Firestore و Storage
+3. املأ `.env.local` من إعدادات المشروع
+4. راجع `firestore.rules.example`
+
+## هيكل البيانات
+
+```
+teachers / students / exams / sessions
 ```
 
-## خارطة الطريق
-
-1. **الآن** — الهيكل + الدخول
-2. رفع طلاب Excel
-3. رفع PDF وتحويله لاختبار
-4. واجهة أداء الاختبار للطالب
-5. قفل الجلسة عند مغادرة المتصفح + صلاحيات المعلم
-6. النتائج التشخيصية + النشر على Firebase Hosting عبر GitHub
+انظر التعليقات في `src/lib/*Api.js`.

@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { BrandMark, ConfigBanner } from '../../components/Brand'
 import { useStudent } from '../../context/StudentContext'
-import { SESSION_STATUS } from '../../lib/constants'
-
 export default function StudentLogin() {
   const {
     student,
@@ -69,7 +67,7 @@ export default function StudentLogin() {
           <li>
             قبل رفع الأسئلة → «لم يبدأ الاختبار، انتظر تعليمات المعلم»
           </li>
-          <li>حالة القفل: {SESSION_STATUS.LOCKED}</li>
+          <li>مغادرة المتصفح تقفل الاختبار حتى يسمح المعلم</li>
         </ul>
 
         <Link className="back-link" to="/">

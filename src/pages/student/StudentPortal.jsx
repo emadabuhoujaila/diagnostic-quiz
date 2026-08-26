@@ -1,16 +1,20 @@
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { BrandMark, ConfigBanner } from '../../components/Brand'
 import { useStudent } from '../../context/StudentContext'
 import { SESSION_STATUS } from '../../lib/constants'
 
 export default function StudentPortal() {
-  const { student, statusMessage, logout, isConfigured } = useStudent()
+  const { student, statusMessage, logout, isConfigured, refreshStudentStatus } =
+    useStudent()
 
   if (!student) {
     return <Navigate to="/student/login" replace />
   }
 
   const status = student.sessionStatus || SESSION_STATUS.WAITING
+  const canStart =
+    status === SESSION_STATUS.IN_PROGRESS ||
+    status === SESSION_STATUS.ALLOWED_RETRY
   const waiting =
     status === SESSION_STATUS.WAITING ||
     status === SESSION_STATUS.LOCKED ||
@@ -55,19 +59,26 @@ export default function StudentPortal() {
                 <dd>{student.section || '—'}</dd>
               </div>
             </dl>
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{ marginTop: '1rem' }}
+              onClick={refreshStudentStatus}
+            >
+              تحديث الحالة
+            </button>
           </div>
-        ) : (
+        ) : canStart ? (
           <div className="status-card ready">
             <h1>{student.examTitle || 'الاختبار التشخيصي'}</h1>
             <p>
-              واجهة أداء الأسئلة (كل الأنواع) ستُفعَّل في الخطوة 4 بعد رفع
-              ملف PDF.
+              تنبيه: مغادرة المتصفح أو التبويب تقفل الاختبار حتى يسمح المعلم.
             </p>
-            <button type="button" className="btn-primary" disabled>
-              بدء الاختبار — قريباً
-            </button>
+            <Link className="btn-primary" to="/student/exam">
+              بدء الاختبار
+            </Link>
           </div>
-        )}
+        ) : null}
       </main>
     </div>
   )

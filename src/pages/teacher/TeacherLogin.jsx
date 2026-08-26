@@ -4,8 +4,16 @@ import { BrandMark, ConfigBanner } from '../../components/Brand'
 import { useAuth } from '../../context/AuthContext'
 
 export default function TeacherLogin() {
-  const { user, login, register, loading, error, setError, isConfigured } =
-    useAuth()
+  const {
+    user,
+    login,
+    register,
+    loading,
+    error,
+    setError,
+    isConfigured,
+    demoMode,
+  } = useAuth()
   const navigate = useNavigate()
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -53,11 +61,14 @@ export default function TeacherLogin() {
 
   return (
     <div className="shell auth-shell">
-      <ConfigBanner configured={isConfigured} />
+      <ConfigBanner configured={isConfigured} demoMode={demoMode} />
       <div className="auth-panel">
         <BrandMark />
         <h1 className="panel-title">دخول المعلم</h1>
-        <p className="panel-sub">إيميل وكلمة سر — يدعم عدة معلمين</p>
+        <p className="panel-sub">
+          إيميل وكلمة سر — يدعم عدة معلمين
+          {demoMode ? ' (تجريبي محلي)' : ''}
+        </p>
 
         <div className="mode-toggle" role="tablist">
           <button

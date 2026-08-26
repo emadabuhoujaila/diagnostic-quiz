@@ -4,11 +4,11 @@ import { useAuth } from '../context/AuthContext'
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from '../lib/constants'
 
 export default function Home() {
-  const { isConfigured } = useAuth()
+  const { isConfigured, demoMode } = useAuth()
 
   return (
     <div className="shell home-shell">
-      <ConfigBanner configured={isConfigured} />
+      <ConfigBanner configured={isConfigured} demoMode={demoMode} />
       <div className="home-bg" aria-hidden="true" />
       <header className="home-top">
         <BrandMark size="lg" />

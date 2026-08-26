@@ -5,9 +5,11 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { collection, getDocs, query, where, limit } from 'firebase/firestore'
-import { db, isFirebaseConfigured } from '../lib/firebase'
+import { findStudentByMinistryId } from '../lib/studentsApi'
+import { getExamByGrade } from '../lib/examsApi'
+import { getSession, getOrCreateSession } from '../lib/sessionsApi'
 import { SESSION_STATUS } from '../lib/constants'
+import { isFirebaseConfigured } from '../lib/firebase'
 
 const StudentContext = createContext(null)
 const STORAGE_KEY = 'physics_diag_student'
@@ -39,75 +41,46 @@ export function StudentProvider({ children }) {
       return null
     }
 
-    // وضع تجريبي بدون Firebase: لا يوجد طلاب حقيقيون
-    if (!isFirebaseConfigured || !db) {
-      setLoading(false)
-      setError(
-        'لم يتم ربط Firebase بعد. بعد الربط سيُتحقق من الرقم الوزاري في قاعدة البيانات.',
-      )
-      return null
-    }
-
     try {
-      const q = query(
-        collection(db, 'students'),
-        where('ministryId', '==', id),
-        limit(1),
-      )
-      const snap = await getDocs(q)
-
-      if (snap.empty) {
+      const data = await findStudentByMinistryId(id)
+      if (!data) {
         setError('لا يوجد اسم مطابق للرقم، تواصل مع المعلم')
         setLoading(false)
         return null
       }
 
-      const docSnap = snap.docs[0]
-      const data = { id: docSnap.id, ...docSnap.data() }
-
-      // التحقق من حالة الاختبار للصف
-      const examSnap = await getDocs(
-        query(
-          collection(db, 'exams'),
-          where('gradeId', '==', data.gradeId),
-          where('published', '==', true),
-          limit(1),
-        ),
-      )
-
+      const exam = await getExamByGrade(data.gradeId)
       let nextStatus = SESSION_STATUS.WAITING
       let message = 'لم يبدأ الاختبار، انتظر تعليمات المعلم'
+      let examId = null
+      let examTitle = null
+      let session = null
 
-      if (!examSnap.empty) {
-        const exam = { id: examSnap.docs[0].id, ...examSnap.docs[0].data() }
-        data.examId = exam.id
-        data.examTitle = exam.title || 'اختبار تشخيصي'
+      if (exam && exam.published && (exam.questions?.length || exam.pages?.length)) {
+        examId = exam.id
+        examTitle = exam.title || 'اختبار تشخيصي'
+        session = await getSession(id, exam.id)
 
-        // جلسة الطالب إن وُجدت
-        const sessionQuery = query(
-          collection(db, 'sessions'),
-          where('ministryId', '==', id),
-          where('examId', '==', exam.id),
-          limit(1),
-        )
-        const sessionSnap = await getDocs(sessionQuery)
-
-        if (!sessionSnap.empty) {
-          const session = sessionSnap.docs[0].data()
-          if (session.status === SESSION_STATUS.LOCKED) {
-            nextStatus = SESSION_STATUS.LOCKED
-            message = 'تم قفل الاختبار. انتظر حتى يسمح لك المعلم بالدخول'
-          } else if (session.status === SESSION_STATUS.SUBMITTED) {
-            nextStatus = SESSION_STATUS.SUBMITTED
-            message = 'لقد أنهيت هذا الاختبار مسبقاً'
-          } else if (
-            session.status === SESSION_STATUS.IN_PROGRESS ||
-            session.status === SESSION_STATUS.ALLOWED_RETRY
-          ) {
-            nextStatus = SESSION_STATUS.IN_PROGRESS
-            message = null
-          }
-        } else {
+        if (!session) {
+          session = await getOrCreateSession({
+            ministryId: id,
+            examId: exam.id,
+            studentName: data.name,
+            gradeId: data.gradeId,
+            section: data.section,
+          })
+          nextStatus = SESSION_STATUS.IN_PROGRESS
+          message = null
+        } else if (session.status === SESSION_STATUS.LOCKED) {
+          nextStatus = SESSION_STATUS.LOCKED
+          message = 'تم قفل الاختبار. انتظر حتى يسمح لك المعلم بالدخول'
+        } else if (session.status === SESSION_STATUS.SUBMITTED) {
+          nextStatus = SESSION_STATUS.SUBMITTED
+          message = 'لقد أنهيت هذا الاختبار مسبقاً'
+        } else if (
+          session.status === SESSION_STATUS.IN_PROGRESS ||
+          session.status === SESSION_STATUS.ALLOWED_RETRY
+        ) {
           nextStatus = SESSION_STATUS.IN_PROGRESS
           message = null
         }
@@ -115,7 +88,10 @@ export function StudentProvider({ children }) {
 
       const sessionPayload = {
         ...data,
+        examId,
+        examTitle,
         sessionStatus: nextStatus,
+        sessionId: session?.id || null,
       }
       setStudent(sessionPayload)
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionPayload))
@@ -129,6 +105,11 @@ export function StudentProvider({ children }) {
       return null
     }
   }, [])
+
+  const refreshStudentStatus = useCallback(async () => {
+    if (!student?.ministryId) return
+    await loginWithMinistryId(student.ministryId)
+  }, [student, loginWithMinistryId])
 
   const logout = useCallback(() => {
     setStudent(null)
@@ -145,10 +126,19 @@ export function StudentProvider({ children }) {
       error,
       setError,
       loginWithMinistryId,
+      refreshStudentStatus,
       logout,
       isConfigured: isFirebaseConfigured,
     }),
-    [student, statusMessage, loading, error, loginWithMinistryId, logout],
+    [
+      student,
+      statusMessage,
+      loading,
+      error,
+      loginWithMinistryId,
+      refreshStudentStatus,
+      logout,
+    ],
   )
 
   return (
