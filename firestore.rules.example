@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// قالب — اضبط القواعد بعد ربط المشروع وفهم الأدوار
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isTeacher() {
+      return request.auth != null;
+    }
+
+    match /teachers/{uid} {
+      allow read: if isTeacher() && request.auth.uid == uid;
+      allow create: if isTeacher() && request.auth.uid == uid;
+      allow update: if isTeacher() && request.auth.uid == uid;
+    }
+
+    // الطلاب: القراءة العامة حسب الرقم الوزاري لاحقاً عبر Cloud Function أفضل أمنياً
+    match /students/{id} {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+
+    match /exams/{id} {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+
+    match /sessions/{id} {
+      allow read: if true;
+      allow write: if true; // يُضيَّق لاحقاً
+    }
+  }
+}
