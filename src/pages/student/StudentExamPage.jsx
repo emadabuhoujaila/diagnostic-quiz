@@ -52,13 +52,20 @@ export default function StudentExamPage() {
     }
   }, [student])
 
-  // قفل عند مغادرة التبويب / إخفاء الصفحة
+  // قفل عند مغادرة التبويب / إخفاء الصفحة / إغلاق النافذة
   useEffect(() => {
     if (!student?.examId || locked || result) return undefined
 
+    let locking = false
     async function doLock(reason) {
+      if (locking) return
+      locking = true
       setLocked(true)
-      await lockSession(student.ministryId, student.examId, reason)
+      try {
+        await lockSession(student.ministryId, student.examId, reason)
+      } catch (err) {
+        console.error(err)
+      }
     }
 
     function onVisibility() {
@@ -71,11 +78,22 @@ export default function StudentExamPage() {
       doLock('page_hide')
     }
 
+    function onBlur() {
+      // تأخير قصير لتقليل الإنذارات الكاذبة عند التنقل داخل الصفحة
+      window.setTimeout(() => {
+        if (document.visibilityState === 'hidden' || !document.hasFocus()) {
+          doLock('window_blur')
+        }
+      }, 400)
+    }
+
     document.addEventListener('visibilitychange', onVisibility)
     window.addEventListener('pagehide', onPageHide)
+    window.addEventListener('blur', onBlur)
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('pagehide', onPageHide)
+      window.removeEventListener('blur', onBlur)
     }
   }, [student, locked, result])
 
