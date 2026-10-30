@@ -18,8 +18,12 @@
       tutor: 'المرصد',
       studentTitle: 'طاولة الطالب',
       teacherTitle: 'مكتب المعلم',
-      teacherLead: 'ارفع درسًا بصيغة PDF ثم احفظه. يستطيع الطلاب النقاش في هذا الدرس فقط، ومن غير أن يأخذوا الإجابة.',
-      drop: 'أفلت ملف PDF هنا أو اختره',
+      langAr: 'العربية',
+      langEn: 'الإنجليزية',
+      modeGroup: 'الدور',
+      langGroup: 'اللغة',
+      teacherLead: 'ارفع درس الفيزياء ثم احفظه. يستطيع الطلاب النقاش في هذا الدرس فقط، ومن غير أن يأخذوا الإجابة.',
+      drop: 'أفلت ملف الدرس هنا أو اختره',
       titleLabel: 'عنوان الدرس',
       titlePh: 'مثال: قانون نيوتن الثاني',
       save: 'حفظ الدرس',
@@ -34,14 +38,14 @@
       ideas: 'أفكار',
       clear: 'بدء حوار جديد',
       teacherName: 'المعلم: عماد أبو حجيلة',
-      needFile: 'اختر ملف PDF أولًا.',
+      needFile: 'اختر ملف الدرس أولًا.',
       needTitle: 'اكتب عنوانًا للدرس.',
       savedOk: 'تم الحفظ. حديث الطلاب الآن عن هذا الدرس فقط.',
       chipLead: 'أريد أن أفكر في',
       errors: {
-        'pdf-only': 'الملف يجب أن يكون PDF.',
-        'empty-pdf': 'لم أجد نصًا في هذا الملف. استخدم PDF فيه نص يمكن تحديده، لا صورة ممسوحة فقط.',
-        'extract-failed': 'تعذّر قراءة هذا الـ PDF.',
+        'pdf-only': 'الملف يجب أن يكون بصيغة بي دي إف.',
+        'empty-pdf': 'لم أجد نصًا يمكن قراءته. استخدم ملفًا فيه نص محدد، لا صورة ممسوحة فقط.',
+        'extract-failed': 'تعذّر قراءة هذا الملف.',
         'too-large': 'الملف أكبر من 12 ميغابايت.',
         'need-title': 'اكتب عنوانًا للدرس.',
         'no-lesson': 'لا يوجد درس محفوظ بعد.',
@@ -81,6 +85,10 @@
       probe: 'Probe',
       ideas: 'Ideas',
       clear: 'Start a new talk',
+      langAr: 'Arabic',
+      langEn: 'English',
+      modeGroup: 'Role',
+      langGroup: 'Language',
       teacherName: 'Teacher: Emad Abu Houjaila',
       needFile: 'Choose a PDF first.',
       needTitle: 'Give the lesson a title.',
@@ -108,6 +116,7 @@
   };
   let talkToken = 0;
   let toastTimer = 0;
+  let toastKey = '';
 
   const log = document.getElementById('log');
   const composer = document.getElementById('composer');
@@ -155,22 +164,43 @@
       btn.classList.toggle('on', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+      const key = el.getAttribute('data-i18n-aria');
+      if (typeof text[key] === 'string') el.setAttribute('aria-label', text[key]);
+    });
     const save = document.getElementById('save');
     if (save) save.textContent = state.lesson ? text.replace : text.save;
+    const when = document.getElementById('active-when');
+    if (when && state.lesson && state.lesson.savedAt) when.textContent = formatTime(state.lesson.savedAt);
+    paintToast();
     renderStage();
   }
 
-  function toast(message) {
-    const el = document.getElementById('toast');
-    el.textContent = message;
-    el.dir = 'auto';
-    el.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 3600);
+  function lookupChrome(code) {
+    const text = pack();
+    if (typeof text[code] === 'string') return text[code];
+    if (text.errors && text.errors[code]) return text.errors[code];
+    return text.errors.server;
   }
 
-  function errorText(code) {
-    return pack().errors[code] || pack().errors.server;
+  function paintToast() {
+    const el = document.getElementById('toast');
+    if (!toastKey) return;
+    el.textContent = lookupChrome(toastKey);
+    el.dir = state.lang === 'ar' ? 'rtl' : 'ltr';
+    el.classList.add('show');
+  }
+
+  function toast(code) {
+    toastKey = code || 'server';
+    paintToast();
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastKey = '';
+      const el = document.getElementById('toast');
+      el.classList.remove('show');
+      el.textContent = '';
+    }, 8000);
   }
 
   function scriptDir(text) {
@@ -292,7 +322,7 @@
       persistMessages();
       renderMessages();
     } catch (err) {
-      if (token === talkToken) toast(errorText(err.message));
+      if (token === talkToken) toast(err.message);
     }
   }
 
@@ -322,7 +352,7 @@
       persistMessages();
       renderMessages();
     } catch (err) {
-      toast(errorText(err.message));
+      toast(err.message);
     } finally {
       state.busy = false;
       document.getElementById('send').disabled = false;
@@ -333,11 +363,11 @@
   function setFile(file) {
     if (!file) return;
     if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') {
-      toast(pack().errors['pdf-only']);
+      toast('pdf-only');
       return;
     }
     if (file.size > 12 * 1024 * 1024) {
-      toast(pack().errors['too-large']);
+      toast('too-large');
       return;
     }
     state.file = file;
@@ -347,9 +377,9 @@
   }
 
   async function saveLesson() {
-    if (!state.file) return toast(pack().needFile);
+    if (!state.file) return toast('needFile');
     const title = document.getElementById('title').value.trim();
-    if (!title) return toast(pack().needTitle);
+    if (!title) return toast('needTitle');
     talkToken += 1;
     const body = new FormData();
     body.append('file', state.file);
@@ -366,9 +396,9 @@
       renderMessages();
       renderTeacher(data.lesson);
       applyI18n();
-      toast(pack().savedOk);
+      toast('savedOk');
     } catch (err) {
-      toast(errorText(err.message));
+      toast(err.message);
     } finally {
       document.getElementById('save').disabled = false;
     }
@@ -399,7 +429,7 @@
       renderTeacher(state.lesson);
       applyI18n();
     } catch (err) {
-      toast(errorText('server'));
+      toast('server');
     }
   }
 
@@ -424,11 +454,6 @@
       storeSet('orrery-lang', next);
       applyI18n();
       renderMessages();
-      const onlyOpening = state.messages.length === 1 && state.messages[0].role === 'tutor';
-      if (state.mode === 'student' && state.lesson && onlyOpening) {
-        state.messages = [];
-        loadOpening();
-      }
     });
   });
 

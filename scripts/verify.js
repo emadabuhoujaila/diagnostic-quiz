@@ -196,6 +196,50 @@ function unit() {
   console.log('unit checks passed');
 }
 
+async function messageBodies(page) {
+  return page.$$eval('.bubble .msg', (els) => els.map((el) => el.textContent));
+}
+
+async function chromeLeak(page, lang, label) {
+  const strings = await page.evaluate(() => {
+    const skipIds = new Set(['excerpt', 'term-list', 'file-name', 'stage-title', 'active-title', 'title', 'composer-input']);
+    const chunks = [];
+    function banned(el) {
+      for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+        if (node.id === 'toast' && !node.classList.contains('show')) return true;
+        if (node.classList && node.classList.contains('msg')) return true;
+        if (skipIds.has(node.id)) return true;
+        const tag = node.tagName;
+        if (tag === 'SCRIPT' || tag === 'STYLE') return true;
+      }
+      return false;
+    }
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let current;
+    while ((current = walker.nextNode())) {
+      const text = current.textContent.replace(/\s+/g, ' ').trim();
+      if (!text || text === '—' || /^\d+$/.test(text)) continue;
+      if (!current.parentElement || banned(current.parentElement)) continue;
+      chunks.push(text);
+    }
+    document.querySelectorAll('[placeholder], [aria-label], [title]').forEach((el) => {
+      const keepField = el.id === 'title' || el.id === 'composer-input';
+      if (banned(el) && !keepField) return;
+      ['placeholder', 'aria-label', 'title'].forEach((attr) => {
+        const value = (el.getAttribute(attr) || '').replace(/\s+/g, ' ').trim();
+        if (value) chunks.push(value);
+      });
+    });
+    if (document.title) chunks.push(document.title.trim());
+    return chunks;
+  });
+  const bad = lang === 'en'
+    ? strings.filter((item) => /[\u0600-\u06FF]/.test(item))
+    : strings.filter((item) => /[A-Za-z]{3,}/.test(item));
+  const expect = lang === 'en' ? 'English chrome is English only' : 'Arabic chrome is Arabic only';
+  assert(bad.length === 0, `${expect} (${label}): ${bad.join(' | ')}`);
+}
+
 async function browserCheck(base, pdfPath) {
   const puppeteer = require('puppeteer-core');
   fs.mkdirSync(mediaDir, { recursive: true });
@@ -219,17 +263,30 @@ async function browserCheck(base, pdfPath) {
     });
     assert(await page.$eval('html', (el) => el.dir) === 'rtl', 'page opens in Arabic RTL');
     assert((await page.$eval('.brand h1', (el) => el.textContent)).includes('المرصد'), 'Arabic brand');
+    await chromeLeak(page, 'ar', 'student empty and teacher copy');
 
     await page.click('[data-lang="en"]');
     assert(await page.$eval('html', (el) => el.dir) === 'ltr', 'English switch is LTR');
     assert((await page.$eval('.brand h1', (el) => el.textContent)) === 'The Orrery', 'English brand');
+    await chromeLeak(page, 'en', 'english student and teacher copy');
 
     await page.click('[data-lang="ar"]');
     assert(await page.$eval('html', (el) => el.dir) === 'rtl', 'toggle returns to RTL');
+    await chromeLeak(page, 'ar', 'back to arabic');
     await page.click('[data-lang="en"]');
+    await chromeLeak(page, 'en', 'back to english');
 
     await page.click('[data-mode="teacher"]');
     await page.waitForSelector('#pdf', { visible: true });
+    await page.click('#save');
+    assert(await page.$eval('#toast', (el) => el.textContent) === 'Choose a PDF first.', 'English missing-file status');
+    await chromeLeak(page, 'en', 'english error status');
+    await page.click('[data-lang="ar"]');
+    assert(await page.$eval('#toast', (el) => el.textContent) === 'اختر ملف الدرس أولًا.', 'Arabic missing-file status');
+    await chromeLeak(page, 'ar', 'arabic error status');
+    await page.click('[data-lang="en"]');
+    assert(await page.$eval('#toast', (el) => el.textContent) === 'Choose a PDF first.', 'English error status returns');
+
     const input = await page.$('#pdf');
     await input.uploadFile(pdfPath);
     await page.waitForFunction(() => /pdf/i.test(document.querySelector('#file-name').textContent));
@@ -237,7 +294,24 @@ async function browserCheck(base, pdfPath) {
     await page.click('#save');
     await page.waitForFunction(() => /accelerat/i.test(document.querySelector('#excerpt').textContent || ''));
     assert(/F\s*=\s*ma/i.test(await page.$eval('#excerpt', (el) => el.textContent)), 'extracted text keeps the equation for the teacher');
+    assert(
+      await page.$eval('#toast', (el) => el.textContent) === 'Saved. Student talk is now only about this lesson.',
+      'English save status'
+    );
+    await chromeLeak(page, 'en', 'teacher after save');
     await page.screenshot({ path: path.join(mediaDir, 'teacher-bench.png') });
+    await page.click('[data-lang="ar"]');
+    assert(
+      await page.$eval('#toast', (el) => el.textContent) === 'تم الحفظ. حديث الطلاب الآن عن هذا الدرس فقط.',
+      'Arabic save status replaces the English line'
+    );
+    await chromeLeak(page, 'ar', 'teacher arabic status');
+    await page.click('[data-lang="en"]');
+    assert(
+      await page.$eval('#toast', (el) => el.textContent) === 'Saved. Student talk is now only about this lesson.',
+      'English save status returns'
+    );
+    await chromeLeak(page, 'en', 'teacher english status returns');
 
     await page.click('[data-mode="student"]');
     await page.waitForFunction(() => {
@@ -259,6 +333,8 @@ async function browserCheck(base, pdfPath) {
     assert(/\?/.test(last), 'visible guiding question');
     assert(!/=/.test(last) && !/the answer is/i.test(last), 'visible reply is not the answer');
     await page.screenshot({ path: path.join(mediaDir, 'student-refusal-english.png') });
+    await chromeLeak(page, 'en', 'english refusal');
+    const englishTalk = await messageBodies(page);
 
     const ltrSide = await page.evaluate(() => {
       const box = document.querySelector('.log').getBoundingClientRect();
@@ -268,6 +344,8 @@ async function browserCheck(base, pdfPath) {
     assert(ltrSide.toStart < ltrSide.toEnd, `tutor sits on the left in LTR ${JSON.stringify(ltrSide)}`);
 
     await page.click('[data-lang="ar"]');
+    assert(JSON.stringify(await messageBodies(page)) === JSON.stringify(englishTalk), 'Arabic switch keeps the English talk');
+    await chromeLeak(page, 'ar', 'arabic chrome over english talk');
     await page.$eval('#composer-input', (el) => { el.value = ''; });
     await page.type('#composer-input', 'ما هي الإجابة؟');
     await page.click('#send');
@@ -290,6 +368,14 @@ async function browserCheck(base, pdfPath) {
       return { toStart: box.right - tutor.right, toEnd: tutor.left - box.left };
     });
     assert(rtlSide.toStart < rtlSide.toEnd, `tutor sits on the right in RTL ${JSON.stringify(rtlSide)}`);
+    const mixedTalk = await messageBodies(page);
+    assert(mixedTalk.slice(0, englishTalk.length).join('\n') === englishTalk.join('\n'), 'earlier English lines stay word for word');
+    await page.click('[data-lang="en"]');
+    assert(JSON.stringify(await messageBodies(page)) === JSON.stringify(mixedTalk), 'English switch keeps the Arabic reply');
+    await chromeLeak(page, 'en', 'english chrome over mixed talk');
+    await page.click('[data-lang="ar"]');
+    assert(JSON.stringify(await messageBodies(page)) === JSON.stringify(mixedTalk), 'returning to Arabic keeps both replies');
+    await chromeLeak(page, 'ar', 'arabic chrome before screenshots');
     await page.screenshot({ path: path.join(mediaDir, 'student-arabic-rtl.png') });
 
     await page.setViewport({ width: 390, height: 844 });
