@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090714">
+  <title>المرصد — حوار فيزياء</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <div class="app">
+    <div class="spectrum" aria-hidden="true"></div>
+    <header class="top">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="5.5" fill="#ffb14a"/>
+          <ellipse cx="32" cy="32" rx="26" ry="10" fill="none" stroke="#5ce1ff" stroke-width="1.6" transform="rotate(18 32 32)"/>
+          <ellipse cx="32" cy="32" rx="26" ry="10" fill="none" stroke="#ff6b9a" stroke-width="1.6" transform="rotate(78 32 32)"/>
+          <ellipse cx="32" cy="32" rx="26" ry="10" fill="none" stroke="#b388ff" stroke-width="1.6" transform="rotate(138 32 32)"/>
+          <circle cx="54" cy="26" r="2.2" fill="#5ce1ff"/>
+        </svg>
+        <div>
+          <h1 data-i18n="brand">المرصد</h1>
+          <p data-i18n="tagline">أسئلة في الفيزياء، لا إجابات جاهزة</p>
+        </div>
+      </div>
+      <div class="tools">
+        <div class="seg" role="group" aria-label="mode">
+          <button type="button" data-mode="student" class="on" aria-pressed="true">
+            <span data-i18n="student">طالب</span>
+          </button>
+          <button type="button" data-mode="teacher" aria-pressed="false">
+            <span data-i18n="teacher">معلم</span>
+          </button>
+        </div>
+        <div class="seg" role="group" aria-label="language">
+          <button type="button" data-lang="ar" class="on" aria-pressed="true">العربية</button>
+          <button type="button" data-lang="en" aria-pressed="false">English</button>
+        </div>
+      </div>
+    </header>
+    <div id="toast" role="status"></div>
+
+    <main>
+      <section class="stage" aria-label="instrument">
+        <div class="bezel">
+          <div class="ring" aria-hidden="true"></div>
+          <div class="bezel-top">
+            <span class="kicker" data-i18n="instrument">جهاز الحوار</span>
+            <span class="live"><i></i><span data-i18n="live">يبث</span></span>
+          </div>
+          <div class="bezel-core" aria-hidden="true"></div>
+          <svg class="mini-wave" viewBox="0 0 600 70" preserveAspectRatio="none" aria-hidden="true">
+            <path class="wave-a" d="M0 36 Q 40 8 80 36 T 160 36 T 240 36 T 320 36 T 400 36 T 480 36 T 560 36 T 640 36"/>
+            <path class="wave-b" d="M0 44 Q 50 68 100 44 T 200 44 T 300 44 T 400 44 T 500 44 T 600 44"/>
+          </svg>
+          <div class="bezel-bottom">
+            <div>
+              <small data-i18n="locked">الدرس المقفول</small>
+              <strong id="stage-title">—</strong>
+            </div>
+            <div class="meters">
+              <div><small data-i18n="probe">سؤال</small><strong id="probe-count">0</strong></div>
+              <div><small data-i18n="ideas">أفكار</small><strong id="term-count">0</strong></div>
+              <div class="lamp" id="lamp" data-state="wait"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="student-view">
+        <div class="panel-head">
+          <div>
+            <h2 data-i18n="studentTitle">طاولة الطالب</h2>
+            <p data-i18n="topicLock">النقاش محصور في الدرس المحفوظ</p>
+          </div>
+          <button type="button" id="clear" class="ghost" data-i18n="clear">بدء حوار جديد</button>
+        </div>
+        <div id="empty-state" class="empty" hidden>
+          <div class="empty-orb" aria-hidden="true"></div>
+          <h3 data-i18n="noLesson">لم يُحفظ درس بعد</h3>
+          <p data-i18n="waiting">بانتظار المعلم أن يحفظ درسًا. الأداة لا تتحدث إلا في موضوع الدرس المحفوظ.</p>
+        </div>
+        <div id="term-row" class="terms" hidden>
+          <span data-i18n="terms">أفكار من الدرس</span>
+          <div id="term-list"></div>
+        </div>
+        <div id="log" class="log" aria-live="polite"></div>
+        <form id="composer" class="composer">
+          <input id="composer-input" dir="auto" data-i18n-placeholder="composer" placeholder="اكتب فكرتك أو سؤالك…" autocomplete="off" maxlength="2000">
+          <div class="composer-actions">
+            <button type="button" id="stuck" class="ghost" data-i18n="stuck">لست متأكدًا</button>
+            <button type="submit" id="send" data-i18n="send">إرسال</button>
+          </div>
+        </form>
+        <p class="credit" data-i18n="teacherName">المعلم: عماد أبو حجيلة</p>
+      </section>
+
+      <section class="panel" id="teacher-view" hidden>
+        <div class="panel-head">
+          <div>
+            <h2 data-i18n="teacherTitle">مكتب المعلم</h2>
+            <p data-i18n="teacherLead">ارفع درسًا بصيغة PDF ثم احفظه. يستطيع الطلاب النقاش في هذا الدرس فقط، ومن غير أن يأخذوا الإجابة.</p>
+          </div>
+        </div>
+        <label class="drop" id="drop">
+          <input id="pdf" type="file" accept="application/pdf,.pdf">
+          <span class="drop-orb" aria-hidden="true"></span>
+          <span class="drop-title" data-i18n="drop">أفلت ملف PDF هنا أو اختره</span>
+          <strong id="file-name"></strong>
+        </label>
+        <label class="field">
+          <span data-i18n="titleLabel">عنوان الدرس</span>
+          <input id="title" data-i18n-placeholder="titlePh" placeholder="مثال: قانون نيوتن الثاني" maxlength="120">
+        </label>
+        <button type="button" id="save" class="save" data-i18n="save">حفظ الدرس</button>
+        <article id="active-card" class="active" hidden>
+          <header>
+            <span class="kicker" data-i18n="current">الدرس النشط</span>
+            <strong id="active-title"></strong>
+          </header>
+          <dl>
+            <div><dt data-i18n="savedAt">حُفظ في</dt><dd id="active-when"></dd></div>
+            <div><dt data-i18n="pages">الصفحات</dt><dd id="active-pages"></dd></div>
+          </dl>
+          <h3 data-i18n="excerpt">النص المستخرج</h3>
+          <pre id="excerpt"></pre>
+        </article>
+        <p class="credit" data-i18n="teacherName">المعلم: عماد أبو حجيلة</p>
+      </section>
+    </main>
+  </div>
+  <script src="sky.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
