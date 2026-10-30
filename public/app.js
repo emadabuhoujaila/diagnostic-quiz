@@ -37,6 +37,9 @@
       probe: 'سؤال',
       ideas: 'أفكار',
       clear: 'بدء حوار جديد',
+      attach: 'أرفق صورة',
+      removeImage: 'إزالة',
+      imageAlt: 'صورة مرفقة',
       teacherName: 'المعلم: عماد أبو حجيلة',
       needFile: 'اختر ملف الدرس أولًا.',
       needTitle: 'اكتب عنوانًا للدرس.',
@@ -49,6 +52,9 @@
         'too-large': 'الملف أكبر من 12 ميغابايت.',
         'need-title': 'اكتب عنوانًا للدرس.',
         'no-lesson': 'لا يوجد درس محفوظ بعد.',
+        'image-type': 'اختر صورة.',
+        'image-large': 'هذه الصورة أكبر مما يُقبل.',
+        'too-many-images': 'يمكن إرفاق أربع صور في الرسالة.',
         server: 'حدث خلل. حاول مرة أخرى.'
       }
     },
@@ -85,6 +91,9 @@
       probe: 'Probe',
       ideas: 'Ideas',
       clear: 'Start a new talk',
+      attach: 'Attach an image',
+      removeImage: 'Remove',
+      imageAlt: 'Attached image',
       langAr: 'Arabic',
       langEn: 'English',
       modeGroup: 'Role',
@@ -101,6 +110,9 @@
         'too-large': 'That file is larger than 12 MB.',
         'need-title': 'Give the lesson a title.',
         'no-lesson': 'No lesson has been saved yet.',
+        'image-type': 'Choose an image.',
+        'image-large': 'That image is too large.',
+        'too-many-images': 'You can attach up to four images.',
         server: 'Something went wrong. Try again.'
       }
     }
@@ -112,6 +124,7 @@
     lesson: null,
     messages: [],
     file: null,
+    pending: [],
     busy: false
   };
   let talkToken = 0;
@@ -174,6 +187,7 @@
     if (when && state.lesson && state.lesson.savedAt) when.textContent = formatTime(state.lesson.savedAt);
     paintToast();
     renderStage();
+    renderPreviews();
   }
 
   function lookupChrome(code) {
@@ -255,7 +269,23 @@
       const body = document.createElement('div');
       body.className = 'msg';
       body.dir = 'auto';
-      body.textContent = item.text;
+      if (Array.isArray(item.images) && item.images.length) {
+        const shots = document.createElement('div');
+        shots.className = 'bubble-images';
+        item.images.forEach((image) => {
+          if (!image || !image.data) return;
+          const pic = document.createElement('img');
+          pic.alt = pack().imageAlt;
+          pic.src = `data:${image.mime || 'image/png'};base64,${image.data}`;
+          shots.appendChild(pic);
+        });
+        body.appendChild(shots);
+      }
+      if (item.text) {
+        const line = document.createElement('p');
+        line.textContent = item.text;
+        body.appendChild(line);
+      }
       bubble.append(who, body);
       log.appendChild(bubble);
     });
@@ -276,7 +306,7 @@
     try {
       const saved = JSON.parse(storeGet(key) || '[]');
       if (Array.isArray(saved)) {
-        state.messages = saved.filter((item) => item && item.text && (item.role === 'tutor' || item.role === 'student'));
+        state.messages = saved.filter((item) => item && (item.text || (item.images && item.images.length)) && (item.role === 'tutor' || item.role === 'student'));
       }
     } catch (err) {
       state.messages = [];
@@ -326,25 +356,81 @@
     }
   }
 
+  const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+  function renderPreviews() {
+    const row = document.getElementById('image-preview');
+    if (!row) return;
+    row.textContent = '';
+    state.pending.forEach((image, index) => {
+      const fig = document.createElement('figure');
+      const pic = document.createElement('img');
+      pic.alt = pack().imageAlt;
+      pic.src = `data:${image.mime};base64,${image.data}`;
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'ghost';
+      remove.textContent = pack().removeImage;
+      remove.addEventListener('click', () => {
+        state.pending.splice(index, 1);
+        renderPreviews();
+      });
+      fig.append(pic, remove);
+      row.appendChild(fig);
+    });
+    row.hidden = !state.pending.length;
+  }
+
+  function addImages(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    if (state.pending.length + files.length > 4) toast('too-many-images');
+    const room = files.slice(0, Math.max(0, 4 - state.pending.length));
+    room.forEach((file) => {
+      if (!IMAGE_TYPES.includes(file.type)) {
+        toast('image-type');
+        return;
+      }
+      if (file.size > 4 * 1024 * 1024) {
+        toast('image-large');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const match = /^data:([^;]+);base64,(.+)$/.exec(String(reader.result || ''));
+        if (!match) return;
+        if (state.pending.length >= 4) return;
+        state.pending.push({ mime: match[1], data: match[2] });
+        renderPreviews();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function send(text) {
     const message = String(text || '').trim();
-    if (!message || state.busy || !state.lesson) return;
+    const images = state.pending.slice();
+    if ((!message && !images.length) || state.busy || !state.lesson) return;
     state.busy = true;
+    state.pending = [];
+    renderPreviews();
     const token = ++talkToken;
-    state.messages.push({ role: 'student', text: message });
+    state.messages.push({ role: 'student', text: message, images });
     renderMessages();
     input.value = '';
     document.getElementById('send').disabled = true;
+    const body = new FormData();
+    body.append('message', message);
+    body.append('lang', state.lang);
+    body.append('history', JSON.stringify(
+      state.messages.slice(0, -1).slice(-12).map((item) => ({ role: item.role, text: item.text || '' }))
+    ));
+    images.forEach((image) => {
+      const bytes = Uint8Array.from(atob(image.data), (ch) => ch.charCodeAt(0));
+      body.append('images', new Blob([bytes], { type: image.mime }), 'picture');
+    });
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          lang: state.lang,
-          history: state.messages.slice(0, -1).slice(-12)
-        })
-      });
+      const res = await fetch('/api/chat', { method: 'POST', body });
       const data = await res.json();
       if (token !== talkToken) return;
       if (!res.ok) throw new Error(data.error || 'server');
@@ -466,6 +552,11 @@
     send(input.value);
   });
   document.getElementById('stuck').addEventListener('click', () => send(pack().stuckMessage));
+  document.getElementById('attach').addEventListener('click', () => document.getElementById('images').click());
+  document.getElementById('images').addEventListener('change', (event) => {
+    addImages(event.target.files);
+    event.target.value = '';
+  });
   document.getElementById('clear').addEventListener('click', () => {
     state.messages = [];
     const key = chatKey();

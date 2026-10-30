@@ -5,8 +5,10 @@ const express = require('express');
 const multer = require('multer');
 const { extractPdf } = require('./lib/extract-pdf');
 const { read, save } = require('./lib/store');
-const { analyzeLesson, reply } = require('./lib/socratic');
-const { guardReply, wordsOf } = require('./lib/guard');
+const { analyzeLesson } = require('./lib/socratic');
+const { wordsOf } = require('./lib/guard');
+const { tutorTurn } = require('./lib/tutor');
+const { geminiConfigured } = require('./lib/gemini');
 
 const PORT = Number(process.env.PORT) || 3000;
 const app = express();
@@ -15,6 +17,12 @@ app.disable('x-powered-by');
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 12 * 1024 * 1024 }
+});
+
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const chatImages = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 4 * 1024 * 1024, files: 4 }
 });
 
 app.use('/api', (req, res, next) => {
@@ -48,7 +56,7 @@ function cleanTitle(value, filename) {
 }
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, gemini: geminiConfigured() });
 });
 
 app.get('/api/lesson', (req, res) => {
@@ -87,16 +95,49 @@ app.post('/api/lesson', upload.single('file'), async (req, res) => {
   }
 });
 
-app.post('/api/chat', (req, res) => {
+function chatImagesMiddleware(req, res, next) {
+  if (!req.is('multipart/form-data')) return next();
+  chatImages.array('images', 4)(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'image-large' });
+    if (err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({ error: 'too-many-images' });
+    }
+    return next(err);
+  });
+}
+
+function chatImagesFrom(req) {
+  const files = Array.isArray(req.files) ? req.files : [];
+  return files.slice(0, 4).map((file) => ({
+    mime: file.mimetype,
+    data: file.buffer.toString('base64')
+  })).filter((image) => IMAGE_TYPES.has(image.mime) && image.data);
+}
+
+function chatHistory(body) {
+  let history = body && body.history;
+  if (typeof history === 'string') {
+    try { history = JSON.parse(history); } catch (err) { history = []; }
+  }
+  return Array.isArray(history) ? history : [];
+}
+
+app.post('/api/chat', chatImagesMiddleware, async (req, res) => {
   const record = read();
   if (!record) return res.status(409).json({ error: 'no-lesson' });
 
   const lang = req.body && req.body.lang === 'en' ? 'en' : 'ar';
   const message = String((req.body && req.body.message) || '').slice(0, 2000);
-  const history = Array.isArray(req.body && req.body.history) ? req.body.history : [];
+  const images = chatImagesFrom(req);
   const lesson = analyzeLesson(record.text, record.title);
-  const drafted = reply({ lesson, history, message, lang });
-  const safe = guardReply(drafted, lesson, lang);
+  const safe = await tutorTurn({
+    lesson,
+    history: chatHistory(req.body),
+    message,
+    lang,
+    images
+  });
   res.json({ reply: safe });
 });
 

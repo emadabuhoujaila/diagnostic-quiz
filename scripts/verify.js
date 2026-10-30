@@ -196,6 +196,21 @@ function unit() {
   console.log('unit checks passed');
 }
 
+async function tutorFallback() {
+  const { tutorTurn } = require('../lib/tutor');
+  const lesson = analyzeLesson(NEWTON.join('\n'), "Newton's Second Law");
+  const turned = await tutorTurn({
+    lesson,
+    history: [],
+    message: 'What is the answer?',
+    lang: 'en',
+    images: [{ mime: 'image/png', data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' }]
+  });
+  assert(/will not give you the answer/i.test(turned) && /\?/.test(turned), `tutor still refuses: ${turned}`);
+  assert(!/=/.test(turned) && !/the answer is/i.test(turned), 'tutor fallback is not the answer');
+  console.log('tutor fallback passed');
+}
+
 async function messageBodies(page) {
   return page.$$eval('.bubble .msg', (els) => els.map((el) => el.textContent));
 }
@@ -393,6 +408,7 @@ async function browserCheck(base, pdfPath) {
 
 async function main() {
   unit();
+  await tutorFallback();
   const samples = path.join(root, 'samples');
   fs.mkdirSync(samples, { recursive: true });
   const newtonPdf = path.join(samples, 'newton-second-law.pdf');

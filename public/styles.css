@@ -329,7 +329,20 @@ html[lang="ar"] .kicker { letter-spacing: 0; text-transform: none; font-size: 0.
   outline: none;
 }
 .composer input:focus, .field input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(92, 225, 255, 0.15); }
-.composer-actions { display: flex; justify-content: space-between; gap: 8px; }
+.composer-actions { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.composer-left { display: flex; gap: 8px; flex-wrap: wrap; }
+.image-preview { display: flex; flex-wrap: wrap; gap: 8px; }
+.image-preview figure { margin: 0; display: grid; gap: 4px; justify-items: start; }
+.image-preview img, .bubble-images img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(92, 225, 255, 0.45);
+}
+.bubble-images { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.bubble .msg p { margin: 0; }
+#images { display: none; }
 
 .drop {
   position: relative;

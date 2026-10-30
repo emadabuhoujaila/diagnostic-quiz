@@ -2,7 +2,7 @@
 
 A bilingual Socratic physics bench for one teacher and a class. Emad Abu Houjaila saves a lesson PDF. Students discuss only that lesson. The tutor asks questions and never gives the answer, the final result, or a ready equation.
 
-No API key. The no-answer rule is enforced in `lib/guard.js`, not only in wording.
+The no-answer rule is enforced in `lib/guard.js` after every reply, including a model reply. Set `GEMINI_API_KEY` or `GOOGLE_API_KEY` to use Gemini (`gemini-3.8-flash`) for a deeper question that can discuss an attached image and then return to the lesson. With neither key set, the page still runs and waits for one. The key is never written into the code.
 
 ## Run
 

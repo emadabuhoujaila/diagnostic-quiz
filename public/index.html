@@ -90,8 +90,13 @@
         <div id="log" class="log" aria-live="polite"></div>
         <form id="composer" class="composer">
           <input id="composer-input" dir="auto" data-i18n-placeholder="composer" placeholder="اكتب فكرتك أو سؤالك…" autocomplete="off" maxlength="2000">
+          <div id="image-preview" class="image-preview" hidden></div>
           <div class="composer-actions">
-            <button type="button" id="stuck" class="ghost" data-i18n="stuck">لست متأكدًا</button>
+            <div class="composer-left">
+              <button type="button" id="attach" class="ghost" data-i18n="attach">أرفق صورة</button>
+              <input id="images" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+              <button type="button" id="stuck" class="ghost" data-i18n="stuck">لست متأكدًا</button>
+            </div>
             <button type="submit" id="send" data-i18n="send">إرسال</button>
           </div>
         </form>
