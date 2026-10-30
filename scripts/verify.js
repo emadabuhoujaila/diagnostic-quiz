@@ -154,6 +154,10 @@ function unit() {
   assert(!/heavier object needs/i.test(cleaned), 'guard removed the lesson sentence');
   assert(/\?/.test(cleaned), 'guard still asks a question');
 
+  const guiding = 'A soap film in the kitchen shows colors because waves meet. What do you notice when that film gets thinner?';
+  assert(guardReply(guiding, lesson, 'en') === guiding, 'a normal guiding reply passes through');
+  assert(!/=/.test(guardReply('Use F = ma here. What do you think?', lesson, 'en')), 'a ready equation is replaced');
+
   const prompts = [
     ['What is the answer?', 'en', true],
     ['Give me the equation', 'en', true],
