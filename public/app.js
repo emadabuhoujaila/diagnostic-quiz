@@ -44,7 +44,7 @@
       chipLead: 'أريد أن أفكر في',
       errors: {
         'pdf-only': 'الملف يجب أن يكون بصيغة بي دي إف.',
-        'empty-pdf': 'لم أجد نصًا يمكن قراءته. استخدم ملفًا فيه نص محدد، لا صورة ممسوحة فقط.',
+        'empty-pdf': 'لم أجد نصًا يمكن قراءته في هذا الملف.',
         'extract-failed': 'تعذّر قراءة هذا الملف.',
         'too-large': 'الملف أكبر من 12 ميغابايت.',
         'need-title': 'اكتب عنوانًا للدرس.',
@@ -96,7 +96,7 @@
       chipLead: 'I want to think about',
       errors: {
         'pdf-only': 'The file must be a PDF.',
-        'empty-pdf': 'No selectable text found. Use a PDF with real text, not a scan alone.',
+        'empty-pdf': 'No readable text found in this file.',
         'extract-failed': 'This PDF could not be read.',
         'too-large': 'That file is larger than 12 MB.',
         'need-title': 'Give the lesson a title.',

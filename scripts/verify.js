@@ -447,6 +447,16 @@ async function main() {
     await browserCheck(base, newtonPdf);
     const afterUi = await (await fetch(`${base}/api/lesson`)).json();
     assert(afterUi.title === "Newton's Second Law", 'UI save replaced the active lesson');
+
+    const scan = path.join(samples, 'Physics_Grade_10_Advanced_filtered.pdf');
+    if (fs.existsSync(scan)) {
+      const scanned = await upload(base, scan, 'Incoherent and Coherent Light');
+      assert(/coherent light/i.test(scanned.lesson.text), 'scan OCR finds the lesson prose');
+      assert(/interference|wavelength|refraction/i.test(scanned.lesson.text), 'scan OCR finds physics ideas');
+      const guided = await chat(base, 'What is the answer?', 'en');
+      assert(/will not give you the answer/i.test(guided) && /\?/.test(guided), `scan lesson still refuses: ${guided}`);
+      assert(!/=/.test(guided), 'scan lesson reply has no equation');
+    }
     console.log('all checks passed');
   } finally {
     await stopServer(child);

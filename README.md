@@ -19,7 +19,7 @@ Open http://localhost:3000
 
 The saved lesson (title and extracted text) stays on disk in `data/lesson.json`, so a refresh keeps it.
 
-Try the sample sheets in `samples/` after you run `npm run verify` once, or upload any text-based PDF (not a scan).
+Try the sample sheets in `samples/` after you run `npm run verify` once. A PDF with a text layer is read directly. A scanned, image-only PDF is read on this machine with Poppler and Tesseract (`poppler-utils`, `tesseract-ocr`, `tesseract-ocr-eng`, `tesseract-ocr-ara`). That path does not need an API key.
 
 UI fonts are Noto Kufi Arabic and Liberation Sans (SIL Open Font License).
 
