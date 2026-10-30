@@ -4,11 +4,12 @@ const path = require('path');
 const express = require('express');
 const multer = require('multer');
 const { extractPdf } = require('./lib/extract-pdf');
-const { read, save } = require('./lib/store');
+const { list, get, add } = require('./lib/store');
 const { analyzeLesson } = require('./lib/socratic');
 const { wordsOf } = require('./lib/guard');
 const { tutorTurn } = require('./lib/tutor');
 const { geminiConfigured } = require('./lib/gemini');
+const { teacherAuthorized } = require('./lib/teacher-auth');
 
 const PORT = Number(process.env.PORT) || 3000;
 const app = express();
@@ -32,11 +33,14 @@ app.use('/api', (req, res, next) => {
 
 app.use(express.json({ limit: '64kb' }));
 
-function publicLesson(record, withText) {
-  if (!record) return { hasLesson: false };
+function teacherPassword(req) {
+  return req.get('x-teacher-password');
+}
+
+function summary(record, withText) {
   const lesson = analyzeLesson(record.text, record.title);
   const payload = {
-    hasLesson: true,
+    id: record.id,
     title: record.title,
     savedAt: record.savedAt,
     pages: record.pages || 0,
@@ -59,19 +63,40 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, gemini: geminiConfigured() });
 });
 
-app.get('/api/lesson', async (req, res) => {
+app.post('/api/teacher/unlock', (req, res) => {
+  if (!teacherAuthorized(teacherPassword(req))) {
+    return res.status(401).json({ error: 'teacher-locked' });
+  }
+  return res.json({ ok: true });
+});
+
+app.get('/api/lessons', async (req, res) => {
   try {
-    const record = await read();
-    const withText = req.query.view === 'teacher';
-    res.json(publicLesson(record, withText));
+    const records = await list();
+    res.json({ lessons: records.map((record) => summary(record, false)) });
   } catch (err) {
-    console.error('Lesson read failed');
+    console.error('Lesson list failed');
     res.status(500).json({ error: 'server' });
   }
 });
 
-app.post('/api/lesson', upload.single('file'), async (req, res) => {
+app.get('/api/lessons/:id', async (req, res) => {
   try {
+    const record = await get(req.params.id);
+    if (!record) return res.status(404).json({ error: 'no-lesson' });
+    const withText = req.query.view === 'teacher' && teacherAuthorized(teacherPassword(req));
+    return res.json({ lesson: summary(record, withText) });
+  } catch (err) {
+    console.error('Lesson read failed');
+    return res.status(500).json({ error: 'server' });
+  }
+});
+
+app.post('/api/lessons', upload.single('file'), async (req, res) => {
+  try {
+    if (!teacherAuthorized(teacherPassword(req))) {
+      return res.status(401).json({ error: 'teacher-locked' });
+    }
     if (!req.file) return res.status(400).json({ error: 'pdf-only' });
     const name = req.file.originalname || '';
     const type = req.file.mimetype || '';
@@ -86,16 +111,16 @@ app.post('/api/lesson', upload.single('file'), async (req, res) => {
       return res.status(422).json({ error: 'empty-pdf' });
     }
 
-    const record = await save({
+    const record = await add({
       title,
       text: extracted.text.slice(0, 100000),
       pages: extracted.pages,
       filename: name.slice(0, 180),
       savedAt: new Date().toISOString()
     });
-    res.json({ ok: true, lesson: publicLesson(record, true) });
+    res.json({ ok: true, lesson: summary(record, true) });
   } catch (err) {
-    if (err && (err.message === 'lesson-save' || err.message === 'lesson-storage')) {
+    if (err && (err.message === 'lesson-save' || err.message === 'lesson-storage' || err.message === 'lesson-read')) {
       console.error('Lesson save failed');
       return res.status(500).json({ error: 'server' });
     }
@@ -133,9 +158,10 @@ function chatHistory(body) {
 }
 
 app.post('/api/chat', chatImagesMiddleware, async (req, res) => {
+  const lessonId = String((req.body && req.body.lessonId) || '');
   let record;
   try {
-    record = await read();
+    record = await get(lessonId);
   } catch (err) {
     console.error('Lesson read failed');
     return res.status(500).json({ error: 'server' });

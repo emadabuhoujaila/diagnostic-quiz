@@ -6,8 +6,9 @@ rem Deploys The Orrery to Cloud Run after: gcloud auth login
 rem Project orrery-tutor. Service region me-central1, or europe-west1 if Doha is unavailable.
 rem The image is built in that region with a regional log bucket. A source deploy in Doha
 rem failed with an empty log because Cloud Build stored the build outside the region.
-rem GEMINI_API_KEY is read when this script runs, stored in Secret Manager, and never written into git.
-rem Cloud Run disk does not keep the lesson. The lesson object is gs://orrery-tutor-lessons/lesson.json
+rem GEMINI_API_KEY and TEACHER_PASSWORD are read when this script runs, stored in Secret Manager, and never written into git.
+rem Cloud Run disk does not keep lessons. Each lesson is an object under gs://orrery-tutor-lessons/lessons/
+rem An older lesson.json is copied into that list on the first catalog read and is left in place.
 
 set PROJECT=orrery-tutor
 set SERVICE=orrery
@@ -15,9 +16,11 @@ set REGION=me-central1
 set FALLBACK=europe-west1
 set BUCKET=orrery-tutor-lessons
 set SECRET=gemini-api-key
+set PASS_SECRET=teacher-password
 set RUN_SA=orrery-run@%PROJECT%.iam.gserviceaccount.com
 set REPO=orrery
 set KEYFILE=%TEMP%\orrery-gemini-key.txt
+set PASSFILE=%TEMP%\orrery-teacher-password.txt
 
 where gcloud >nul 2>&1
 if errorlevel 1 (
@@ -81,6 +84,30 @@ set SECRET_ERR=%ERRORLEVEL%
 del /f /q "%KEYFILE%" 2>nul
 if not "%SECRET_ERR%"=="0" exit /b 1
 
+if not defined TEACHER_PASSWORD goto promptpass
+powershell -NoProfile -Command "if ([string]::IsNullOrWhiteSpace($env:TEACHER_PASSWORD)) { exit 1 }; [System.IO.File]::WriteAllText($env:PASSFILE, $env:TEACHER_PASSWORD.Trim())"
+if errorlevel 1 goto passfail
+set "TEACHER_PASSWORD="
+goto passready
+
+:promptpass
+echo Enter the teacher password. It is stored in Secret Manager and is not shown or saved in the repo.
+powershell -NoProfile -Command "$s = Read-Host 'Teacher password' -AsSecureString; if (-not $s -or $s.Length -eq 0) { exit 1 }; $p = [System.Net.NetworkCredential]::new('', $s).Password; if ([string]::IsNullOrWhiteSpace($p)) { exit 1 }; [System.IO.File]::WriteAllText($env:PASSFILE, $p.Trim()); $p = $null"
+if errorlevel 1 goto passfail
+
+:passready
+for %%A in ("%PASSFILE%") do if %%~zA==0 goto passfail
+call gcloud secrets describe %PASS_SECRET% >nul 2>&1
+if errorlevel 1 (
+  call gcloud secrets create %PASS_SECRET% --data-file="%PASSFILE%" --replication-policy=automatic
+) else (
+  call gcloud secrets versions add %PASS_SECRET% --data-file="%PASSFILE%"
+)
+set PASS_ERR=%ERRORLEVEL%
+del /f /q "%PASSFILE%" 2>nul
+set "TEACHER_PASSWORD="
+if not "%PASS_ERR%"=="0" exit /b 1
+
 call gcloud iam service-accounts describe %RUN_SA% >nul 2>&1
 if errorlevel 1 (
   call gcloud iam service-accounts create orrery-run --display-name="Orrery tutor"
@@ -88,6 +115,8 @@ if errorlevel 1 (
 )
 
 call gcloud secrets add-iam-policy-binding %SECRET% --member=serviceAccount:%RUN_SA% --role=roles/secretmanager.secretAccessor --quiet
+if errorlevel 1 exit /b 1
+call gcloud secrets add-iam-policy-binding %PASS_SECRET% --member=serviceAccount:%RUN_SA% --role=roles/secretmanager.secretAccessor --quiet
 if errorlevel 1 exit /b 1
 
 call gcloud storage buckets describe gs://%BUCKET% >nul 2>&1
@@ -129,7 +158,7 @@ if "!NEED_WAIT!"=="1" (
   ping -n 121 127.0.0.1 >nul
 )
 
-echo Lessons persist in gs://%BUCKET%/lesson.json
+echo Lessons persist in gs://%BUCKET%/lessons/
 echo Building in !REGION! with build logs stored in that region.
 call :ensure_repo !REGION!
 if errorlevel 1 exit /b 1
@@ -149,7 +178,7 @@ if errorlevel 1 exit /b 1
 :built
 call gcloud artifacts repositories add-iam-policy-binding %REPO% --location=!IMAGE_REGION! --project=%PROJECT% --member=serviceAccount:%RUN_SA% --role=roles/artifactregistry.reader --quiet
 call gcloud artifacts repositories add-iam-policy-binding %REPO% --location=!IMAGE_REGION! --project=%PROJECT% --member=serviceAccount:service-!PROJECT_NUMBER!@serverless-robot-prod.iam.gserviceaccount.com --role=roles/artifactregistry.reader --quiet
-call gcloud run deploy %SERVICE% --image !IMAGE!:latest --project %PROJECT% --region !REGION! --service-account %RUN_SA% --allow-unauthenticated --quiet --memory 2Gi --cpu 2 --timeout 300 --concurrency 4 --max-instances 3 --port 8080 --set-secrets=GEMINI_API_KEY=%SECRET%:latest --set-env-vars=LESSON_BUCKET=%BUCKET%
+call gcloud run deploy %SERVICE% --image !IMAGE!:latest --project %PROJECT% --region !REGION! --service-account %RUN_SA% --allow-unauthenticated --quiet --memory 2Gi --cpu 2 --timeout 300 --concurrency 4 --max-instances 3 --port 8080 --set-secrets=GEMINI_API_KEY=%SECRET%:latest,TEACHER_PASSWORD=%PASS_SECRET%:latest --set-env-vars=LESSON_BUCKET=%BUCKET%
 if errorlevel 1 exit /b 1
 
 echo Student URL:
@@ -160,6 +189,12 @@ exit /b 0
 del /f /q "%KEYFILE%" 2>nul
 set "GEMINI_API_KEY="
 echo A Gemini key is required. Set GEMINI_API_KEY or type it when asked. It is not saved in the repo.
+exit /b 1
+
+:passfail
+del /f /q "%PASSFILE%" 2>nul
+set "TEACHER_PASSWORD="
+echo A teacher password is required. Set TEACHER_PASSWORD or type it when asked. It is not saved in the repo.
 exit /b 1
 
 :bind

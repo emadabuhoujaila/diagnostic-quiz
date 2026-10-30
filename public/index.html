@@ -58,7 +58,7 @@
           </svg>
           <div class="bezel-bottom">
             <div>
-              <small data-i18n="locked">الدرس المقفول</small>
+              <small data-i18n="locked">الدرس المختار</small>
               <strong id="stage-title">—</strong>
             </div>
             <div class="meters">
@@ -74,21 +74,30 @@
         <div class="panel-head">
           <div>
             <h2 data-i18n="studentTitle">طاولة الطالب</h2>
-            <p data-i18n="topicLock">النقاش محصور في الدرس المحفوظ</p>
+            <p data-i18n="topicLock">النقاش محصور في الدرس الذي اخترته</p>
           </div>
-          <button type="button" id="clear" class="ghost" data-i18n="clear">بدء حوار جديد</button>
+          <div class="panel-actions">
+            <button type="button" id="change-lesson" class="ghost" data-i18n="changeLesson" hidden>درس آخر</button>
+            <button type="button" id="clear" class="ghost" data-i18n="clear" hidden>بدء حوار جديد</button>
+          </div>
         </div>
         <div id="empty-state" class="empty" hidden>
           <div class="empty-orb" aria-hidden="true"></div>
-          <h3 data-i18n="noLesson">لم يُحفظ درس بعد</h3>
-          <p data-i18n="waiting">بانتظار المعلم أن يحفظ درسًا. الأداة لا تتحدث إلا في موضوع الدرس المحفوظ.</p>
+          <h3 data-i18n="noLesson">لا توجد دروس بعد</h3>
+          <p data-i18n="waiting">بانتظار المعلم أن يضيف درسًا. الحوار يبدأ بعد اختيار درس، ويبقى داخله.</p>
+        </div>
+        <div id="lesson-picker" class="empty" hidden>
+          <div class="empty-orb" aria-hidden="true"></div>
+          <h3 data-i18n="pickLesson">اختر درسًا</h3>
+          <p data-i18n="pickLead">اختر درسًا من القائمة قبل أن يبدأ الحوار.</p>
+          <div id="lesson-list" class="lesson-list"></div>
         </div>
         <div id="term-row" class="terms" hidden>
           <span data-i18n="terms">أفكار من الدرس</span>
           <div id="term-list"></div>
         </div>
-        <div id="log" class="log" aria-live="polite"></div>
-        <form id="composer" class="composer">
+        <div id="log" class="log" aria-live="polite" hidden></div>
+        <form id="composer" class="composer" hidden>
           <input id="composer-input" dir="auto" data-i18n-placeholder="composer" placeholder="اكتب فكرتك أو سؤالك…" autocomplete="off" maxlength="2000">
           <div id="image-preview" class="image-preview" hidden></div>
           <div class="composer-actions">
@@ -107,33 +116,46 @@
         <div class="panel-head">
           <div>
             <h2 data-i18n="teacherTitle">مكتب المعلم</h2>
-            <p data-i18n="teacherLead">ارفع درس الفيزياء ثم احفظه. يستطيع الطلاب النقاش في هذا الدرس فقط، ومن غير أن يأخذوا الإجابة.</p>
+            <p data-i18n="teacherLead">كل ملف يُضاف ويبقى. يختار الطالب درسًا قبل الحوار، ويبقى الحديث داخله، ومن غير الإجابة.</p>
           </div>
         </div>
-        <label class="drop" id="drop">
-          <input id="pdf" type="file" accept="application/pdf,.pdf">
-          <span class="drop-orb" aria-hidden="true"></span>
-          <span class="drop-title" data-i18n="drop">أفلت ملف الدرس هنا أو اختره</span>
-          <strong id="file-name"></strong>
-        </label>
-        <label class="field">
-          <span data-i18n="titleLabel">عنوان الدرس</span>
-          <input id="title" data-i18n-placeholder="titlePh" placeholder="مثال: قانون نيوتن الثاني" maxlength="120">
-        </label>
-        <button type="button" id="save" class="save" data-i18n="save">حفظ الدرس</button>
-        <p id="save-status" class="save-status" role="status" hidden></p>
-        <article id="active-card" class="active" hidden>
-          <header>
-            <span class="kicker" data-i18n="current">الدرس النشط</span>
-            <strong id="active-title"></strong>
-          </header>
-          <dl>
-            <div><dt data-i18n="savedAt">حُفظ في</dt><dd id="active-when"></dd></div>
-            <div><dt data-i18n="pages">الصفحات</dt><dd id="active-pages"></dd></div>
-          </dl>
-          <h3 data-i18n="excerpt">النص المستخرج</h3>
-          <pre id="excerpt"></pre>
-        </article>
+        <form id="teacher-lock" class="lock-form">
+          <h3 data-i18n="lockTitle">باب المعلم</h3>
+          <p data-i18n="lockLead">أدخل كلمة المرور لفتح مكتب المعلم. طاولة الطالب تبقى مفتوحة.</p>
+          <label class="field">
+            <span data-i18n="passwordLabel">كلمة المرور</span>
+            <input id="teacher-password" type="password" autocomplete="current-password" data-i18n-placeholder="passwordPh" placeholder="كلمة المرور">
+          </label>
+          <button type="submit" id="unlock" class="save" data-i18n="unlock">فتح المكتب</button>
+        </form>
+        <div id="teacher-bench" hidden>
+          <label class="drop" id="drop">
+            <input id="pdf" type="file" accept="application/pdf,.pdf">
+            <span class="drop-orb" aria-hidden="true"></span>
+            <span class="drop-title" data-i18n="drop">أفلت ملف الدرس هنا أو اختره</span>
+            <strong id="file-name"></strong>
+          </label>
+          <label class="field">
+            <span data-i18n="titleLabel">عنوان الدرس</span>
+            <input id="title" data-i18n-placeholder="titlePh" placeholder="مثال: قانون نيوتن الثاني" maxlength="120">
+          </label>
+          <button type="button" id="save" class="save" data-i18n="save">إضافة درس</button>
+          <p id="save-status" class="save-status" role="status" hidden></p>
+          <h3 data-i18n="savedLessons">الدروس المحفوظة</h3>
+          <div id="teacher-lessons" class="lesson-list"></div>
+          <article id="active-card" class="active" hidden>
+            <header>
+              <span class="kicker" data-i18n="current">معاينة الدرس</span>
+              <strong id="active-title"></strong>
+            </header>
+            <dl>
+              <div><dt data-i18n="savedAt">حُفظ في</dt><dd id="active-when"></dd></div>
+              <div><dt data-i18n="pages">الصفحات</dt><dd id="active-pages"></dd></div>
+            </dl>
+            <h3 data-i18n="excerpt">النص المستخرج</h3>
+            <pre id="excerpt"></pre>
+          </article>
+        </div>
         <p class="credit" data-i18n="teacherName">المعلم: عماد أبو حجيلة</p>
       </section>
     </main>

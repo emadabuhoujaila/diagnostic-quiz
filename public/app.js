@@ -7,9 +7,12 @@
       teacher: 'معلم',
       instrument: 'جهاز الحوار',
       live: 'يبث',
-      locked: 'الدرس المقفول',
-      noLesson: 'لم يُحفظ درس بعد',
-      waiting: 'بانتظار المعلم أن يحفظ درسًا. الأداة لا تتحدث إلا في موضوع الدرس المحفوظ.',
+      locked: 'الدرس المختار',
+      noLesson: 'لا توجد دروس بعد',
+      waiting: 'بانتظار المعلم أن يضيف درسًا. الحوار يبدأ بعد اختيار درس، ويبقى داخله.',
+      pickLesson: 'اختر درسًا',
+      pickLead: 'اختر درسًا من القائمة قبل أن يبدأ الحوار.',
+      changeLesson: 'درس آخر',
       composer: 'اكتب فكرتك أو سؤالك…',
       send: 'إرسال',
       stuck: 'لست متأكدًا',
@@ -22,17 +25,22 @@
       langEn: 'الإنجليزية',
       modeGroup: 'الدور',
       langGroup: 'اللغة',
-      teacherLead: 'ارفع درس الفيزياء ثم احفظه. يستطيع الطلاب النقاش في هذا الدرس فقط، ومن غير أن يأخذوا الإجابة.',
+      teacherLead: 'كل ملف يُضاف ويبقى. يختار الطالب درسًا قبل الحوار، ويبقى الحديث داخله، ومن غير الإجابة.',
+      lockTitle: 'باب المعلم',
+      lockLead: 'أدخل كلمة المرور لفتح مكتب المعلم. طاولة الطالب تبقى مفتوحة.',
+      passwordLabel: 'كلمة المرور',
+      passwordPh: 'كلمة المرور',
+      unlock: 'فتح المكتب',
       drop: 'أفلت ملف الدرس هنا أو اختره',
       titleLabel: 'عنوان الدرس',
       titlePh: 'مثال: قانون نيوتن الثاني',
-      save: 'حفظ الدرس',
-      replace: 'استبدال الدرس النشط',
-      current: 'الدرس النشط',
+      save: 'إضافة درس',
+      savedLessons: 'الدروس المحفوظة',
+      current: 'معاينة الدرس',
       savedAt: 'حُفظ في',
       pages: 'الصفحات',
       excerpt: 'النص المستخرج',
-      topicLock: 'النقاش محصور في الدرس المحفوظ',
+      topicLock: 'النقاش محصور في الدرس الذي اخترته',
       terms: 'أفكار من الدرس',
       probe: 'سؤال',
       ideas: 'أفكار',
@@ -45,7 +53,7 @@
       needTitle: 'اكتب عنوانًا للدرس.',
       saving: 'جارٍ الحفظ…',
       savingNote: 'جارٍ حفظ الدرس. قد يحتاج الملف المصوّر إلى دقيقة، ولن يتغير الزر حتى ينتهي.',
-      savedOk: 'تم الحفظ. حديث الطلاب الآن عن هذا الدرس فقط.',
+      savedOk: 'تمت الإضافة. الدروس السابقة ما زالت محفوظة.',
       chipLead: 'أريد أن أفكر في',
       errors: {
         'pdf-only': 'الملف يجب أن يكون بصيغة بي دي إف.',
@@ -53,7 +61,8 @@
         'extract-failed': 'تعذّر قراءة هذا الملف.',
         'too-large': 'الملف أكبر من 12 ميغابايت.',
         'need-title': 'اكتب عنوانًا للدرس.',
-        'no-lesson': 'لا يوجد درس محفوظ بعد.',
+        'no-lesson': 'اختر درسًا من القائمة أولًا.',
+        'teacher-locked': 'كلمة المرور غير مطابقة.',
         'image-type': 'اختر صورة.',
         'image-large': 'هذه الصورة أكبر مما يُقبل.',
         'too-many-images': 'يمكن إرفاق أربع صور في الرسالة.',
@@ -67,9 +76,12 @@
       teacher: 'Teacher',
       instrument: 'Dialogue instrument',
       live: 'Live',
-      locked: 'Locked lesson',
-      noLesson: 'No lesson saved yet',
-      waiting: 'Waiting for the teacher to save a lesson. The tool only discusses that saved topic.',
+      locked: 'Chosen lesson',
+      noLesson: 'No lessons yet',
+      waiting: 'Waiting for the teacher to add a lesson. The talk starts after you choose one, and it stays there.',
+      pickLesson: 'Choose a lesson',
+      pickLead: 'Choose a lesson from the list before the talk starts.',
+      changeLesson: 'Another lesson',
       composer: 'Write your idea or your question…',
       send: 'Send',
       stuck: 'I’m not sure',
@@ -78,17 +90,22 @@
       tutor: 'Orrery',
       studentTitle: 'Student bench',
       teacherTitle: 'Teacher bench',
-      teacherLead: 'Upload a lesson as a PDF and save it. Students discuss only that lesson, and they never receive the answer.',
+      teacherLead: 'Each file is added and kept. The student chooses one lesson before the talk, and the talk stays inside it without the answer.',
+      lockTitle: 'Teacher door',
+      lockLead: 'Enter the password to open the teacher bench. The student bench stays open.',
+      passwordLabel: 'Password',
+      passwordPh: 'Password',
+      unlock: 'Open the bench',
       drop: 'Drop a PDF here, or choose one',
       titleLabel: 'Lesson title',
       titlePh: 'Example: Newton’s second law',
-      save: 'Save lesson',
-      replace: 'Replace active lesson',
-      current: 'Active lesson',
+      save: 'Add lesson',
+      savedLessons: 'Saved lessons',
+      current: 'Lesson preview',
       savedAt: 'Saved',
       pages: 'Pages',
       excerpt: 'Extracted text',
-      topicLock: 'Talk stays inside the saved lesson',
+      topicLock: 'Talk stays inside the lesson you chose',
       terms: 'Ideas in the lesson',
       probe: 'Probe',
       ideas: 'Ideas',
@@ -105,7 +122,7 @@
       needTitle: 'Give the lesson a title.',
       saving: 'Saving…',
       savingNote: 'Saving the lesson. A scanned file can take a minute, and the button stays busy until it finishes.',
-      savedOk: 'Saved. Student talk is now only about this lesson.',
+      savedOk: 'Added. Earlier lessons are still saved.',
       chipLead: 'I want to think about',
       errors: {
         'pdf-only': 'The file must be a PDF.',
@@ -113,7 +130,8 @@
         'extract-failed': 'This PDF could not be read.',
         'too-large': 'That file is larger than 12 MB.',
         'need-title': 'Give the lesson a title.',
-        'no-lesson': 'No lesson has been saved yet.',
+        'no-lesson': 'Choose a lesson from the list first.',
+        'teacher-locked': 'That password does not open the teacher bench.',
         'image-type': 'Choose an image.',
         'image-large': 'That image is too large.',
         'too-many-images': 'You can attach up to four images.',
@@ -125,7 +143,10 @@
   const state = {
     lang: storeGet('orrery-lang') || 'ar',
     mode: 'student',
+    catalog: [],
     lesson: null,
+    preview: null,
+    teacherKey: '',
     messages: [],
     file: null,
     pending: [],
@@ -140,6 +161,9 @@
   const composer = document.getElementById('composer');
   const input = document.getElementById('composer-input');
   const empty = document.getElementById('empty-state');
+  const picker = document.getElementById('lesson-picker');
+  const lessonList = document.getElementById('lesson-list');
+  const teacherList = document.getElementById('teacher-lessons');
   const termRow = document.getElementById('term-row');
   const termList = document.getElementById('term-list');
 
@@ -156,7 +180,11 @@
   }
 
   function chatKey() {
-    return state.lesson && state.lesson.savedAt ? `orrery:${state.lesson.savedAt}` : '';
+    return state.lesson && state.lesson.id ? `orrery:${state.lesson.id}` : '';
+  }
+
+  function teacherHeaders() {
+    return state.teacherKey ? { 'X-Teacher-Password': state.teacherKey } : {};
   }
 
   function applyI18n() {
@@ -188,16 +216,18 @@
     });
     const save = document.getElementById('save');
     if (save) {
-      save.textContent = state.saving ? text.saving : (state.lesson ? text.replace : text.save);
+      save.textContent = state.saving ? text.saving : text.save;
       save.disabled = state.saving;
       save.setAttribute('aria-busy', state.saving ? 'true' : 'false');
     }
     paintSaveStatus();
     const when = document.getElementById('active-when');
-    if (when && state.lesson && state.lesson.savedAt) when.textContent = formatTime(state.lesson.savedAt);
+    if (when && state.preview && state.preview.savedAt) when.textContent = formatTime(state.preview.savedAt);
     paintToast();
     renderStage();
     renderPreviews();
+    renderPicker();
+    renderTeacherList();
   }
 
   function lookupChrome(code) {
@@ -269,7 +299,9 @@
     const title = document.getElementById('stage-title');
     const lamp = document.getElementById('lamp');
     const terms = (state.lesson && state.lesson.terms) || [];
-    title.textContent = state.lesson ? state.lesson.title : pack().noLesson;
+    if (state.lesson) title.textContent = state.lesson.title;
+    else if (state.catalog.length) title.textContent = pack().pickLesson;
+    else title.textContent = pack().noLesson;
     title.dir = 'auto';
     document.getElementById('term-count').textContent = String(terms.length);
     document.getElementById('probe-count').textContent = String(
@@ -343,21 +375,60 @@
     }
   }
 
+  function fillLessonButtons(container, onPick) {
+    if (!container) return;
+    container.textContent = '';
+    state.catalog.forEach((lesson) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'lesson-pick';
+      if (state.lesson && state.lesson.id === lesson.id) btn.classList.add('on');
+      const name = document.createElement('span');
+      name.textContent = lesson.title;
+      name.dir = 'auto';
+      const when = document.createElement('small');
+      when.textContent = formatTime(lesson.savedAt);
+      btn.append(name, when);
+      btn.addEventListener('click', () => onPick(lesson));
+      container.appendChild(btn);
+    });
+  }
+
+  function renderPicker() {
+    fillLessonButtons(lessonList, pickLesson);
+  }
+
+  function renderTeacherList() {
+    fillLessonButtons(teacherList, (lesson) => openTeacherLesson(lesson.id));
+  }
+
   function showMode(mode) {
     state.mode = mode;
     document.getElementById('student-view').hidden = mode !== 'student';
     document.getElementById('teacher-view').hidden = mode !== 'teacher';
     applyI18n();
-    if (mode === 'teacher') loadTeacher();
+    if (mode === 'teacher') showTeacher();
     else showStudent();
   }
 
+  function showTeacher() {
+    const open = Boolean(state.teacherKey);
+    document.getElementById('teacher-lock').hidden = open;
+    document.getElementById('teacher-bench').hidden = !open;
+    if (open) renderTeacherList();
+  }
+
   function showStudent() {
+    const hasLessons = state.catalog.length > 0;
     const has = Boolean(state.lesson);
-    empty.hidden = has;
+    empty.hidden = hasLessons;
+    picker.hidden = !hasLessons || has;
     composer.hidden = !has;
     log.hidden = !has;
     termRow.hidden = !has;
+    document.getElementById('clear').hidden = !has;
+    document.getElementById('change-lesson').hidden = !has;
+    renderPicker();
     if (!has) {
       state.messages = [];
       renderMessages();
@@ -367,16 +438,37 @@
     else renderMessages();
   }
 
+  function pickLesson(lesson) {
+    if (!lesson || !lesson.id) return;
+    talkToken += 1;
+    state.lesson = lesson;
+    storeSet('orrery-lesson', lesson.id);
+    restoreMessages();
+    showStudent();
+  }
+
+  function changeLesson() {
+    talkToken += 1;
+    state.lesson = null;
+    storeDel('orrery-lesson');
+    state.messages = [];
+    state.pending = [];
+    renderPreviews();
+    showStudent();
+  }
+
   async function loadOpening() {
+    if (!state.lesson) return;
     const token = ++talkToken;
+    const lessonId = state.lesson.id;
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: '', history: [], lang: state.lang })
+        body: JSON.stringify({ message: '', history: [], lang: state.lang, lessonId })
       });
       const data = await res.json();
-      if (token !== talkToken) return;
+      if (token !== talkToken || !state.lesson || state.lesson.id !== lessonId) return;
       if (!res.ok) throw new Error(data.error || 'server');
       state.messages = [{ role: 'tutor', text: data.reply }];
       persistMessages();
@@ -445,6 +537,7 @@
     state.pending = [];
     renderPreviews();
     const token = ++talkToken;
+    const lessonId = state.lesson.id;
     state.messages.push({ role: 'student', text: message, images });
     renderMessages();
     input.value = '';
@@ -452,6 +545,7 @@
     const body = new FormData();
     body.append('message', message);
     body.append('lang', state.lang);
+    body.append('lessonId', lessonId);
     body.append('history', JSON.stringify(
       state.messages.slice(0, -1).slice(-12).map((item) => ({ role: item.role, text: item.text || '' }))
     ));
@@ -494,6 +588,7 @@
 
   async function saveLesson() {
     if (state.saving) return;
+    if (!state.teacherKey) return toast('teacher-locked');
     if (!state.file) {
       setSaveStatus('needFile');
       return toast('needFile');
@@ -503,7 +598,6 @@
       setSaveStatus('needTitle');
       return toast('needTitle');
     }
-    talkToken += 1;
     const body = new FormData();
     body.append('file', state.file);
     body.append('title', title);
@@ -511,21 +605,29 @@
     setSaveStatus('savingNote');
     applyI18n();
     try {
-      const res = await fetch('/api/lesson', { method: 'POST', body });
+      const res = await fetch('/api/lessons', {
+        method: 'POST',
+        headers: teacherHeaders(),
+        body
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'server');
-      state.lesson = data.lesson;
-      state.messages = [];
-      const key = chatKey();
-      if (key) storeDel(key);
-      renderMessages();
-      renderTeacher(data.lesson);
+      state.preview = data.lesson;
+      state.file = null;
+      document.getElementById('file-name').textContent = '';
+      document.getElementById('title').value = '';
+      document.getElementById('pdf').value = '';
+      await refreshCatalog();
+      renderTeacher(state.preview);
+      renderTeacherList();
       setSaveStatus('savedOk');
       toast('savedOk');
     } catch (err) {
       const code = err && err.message ? err.message : 'server';
+      if (code === 'teacher-locked') state.teacherKey = '';
       setSaveStatus(code);
       toast(code);
+      showTeacher();
     } finally {
       state.saving = false;
       applyI18n();
@@ -548,26 +650,64 @@
     renderStage();
   }
 
-  async function loadTeacher() {
+  async function openTeacherLesson(id) {
     try {
-      const res = await fetch('/api/lesson?view=teacher');
+      const res = await fetch(`/api/lessons/${encodeURIComponent(id)}?view=teacher`, {
+        headers: teacherHeaders()
+      });
       const data = await res.json();
-      state.lesson = data.hasLesson ? data : null;
-      if (state.lesson) document.getElementById('title').value = state.lesson.title;
-      renderTeacher(state.lesson);
+      if (!res.ok) throw new Error(data.error || 'server');
+      state.preview = data.lesson;
+      renderTeacher(state.preview);
+    } catch (err) {
+      toast(err.message || 'server');
+    }
+  }
+
+  async function unlockTeacher() {
+    const field = document.getElementById('teacher-password');
+    const key = field.value;
+    if (!String(key).trim()) {
+      toast('teacher-locked');
+      return;
+    }
+    try {
+      const res = await fetch('/api/teacher/unlock', {
+        method: 'POST',
+        headers: { 'X-Teacher-Password': key }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'teacher-locked');
+      state.teacherKey = key;
+      field.value = '';
+      await refreshCatalog();
+      showTeacher();
       applyI18n();
     } catch (err) {
-      toast('server');
+      state.teacherKey = '';
+      toast(err.message || 'teacher-locked');
+    }
+  }
+
+  async function refreshCatalog() {
+    const res = await fetch('/api/lessons');
+    const data = await res.json();
+    state.catalog = Array.isArray(data.lessons) ? data.lessons : [];
+    if (state.lesson) {
+      const fresh = state.catalog.find((item) => item.id === state.lesson.id);
+      state.lesson = fresh || null;
+      if (!state.lesson) storeDel('orrery-lesson');
     }
   }
 
   async function boot() {
     applyI18n();
     try {
-      const res = await fetch('/api/lesson');
-      const data = await res.json();
-      state.lesson = data.hasLesson ? data : null;
+      await refreshCatalog();
+      const savedId = storeGet('orrery-lesson');
+      state.lesson = state.catalog.find((item) => item.id === savedId) || null;
     } catch (err) {
+      state.catalog = [];
       state.lesson = null;
     }
     restoreMessages();
@@ -606,7 +746,12 @@
     if (state.lesson) loadOpening();
     else renderMessages();
   });
+  document.getElementById('change-lesson').addEventListener('click', changeLesson);
   document.getElementById('save').addEventListener('click', saveLesson);
+  document.getElementById('teacher-lock').addEventListener('submit', (event) => {
+    event.preventDefault();
+    unlockTeacher();
+  });
   document.getElementById('pdf').addEventListener('change', (event) => {
     setFile(event.target.files && event.target.files[0]);
   });

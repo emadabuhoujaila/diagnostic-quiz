@@ -12,6 +12,7 @@ const { guardReply, outputIsSafe, leaksLesson } = require('../lib/guard');
 const root = path.join(__dirname, '..');
 const mediaDir = '/cursor/stores/self/media';
 const arabicFont = '/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf';
+const TEACHER_KEY = 'orrery-verify';
 
 const NEWTON = [
   "Newton's Second Law",
@@ -77,11 +78,18 @@ function freePort() {
   });
 }
 
-function startServer(port, lessonPath) {
+function startServer(port, lessonDir) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ['server.js'], {
       cwd: root,
-      env: { ...process.env, PORT: String(port), LESSON_PATH: lessonPath },
+      env: {
+        ...process.env,
+        PORT: String(port),
+        LESSON_DIR: lessonDir,
+        LESSON_PATH: path.join(lessonDir, 'lesson.json'),
+        LESSON_BUCKET: '',
+        TEACHER_PASSWORD: TEACHER_KEY
+      },
       stdio: ['ignore', 'pipe', 'pipe']
     });
     let buf = '';
@@ -123,24 +131,44 @@ async function upload(base, file, title) {
   const body = new FormData();
   body.append('file', new Blob([bytes], { type: 'application/pdf' }), path.basename(file));
   body.append('title', title);
-  const res = await fetch(`${base}/api/lesson`, { method: 'POST', body });
+  const res = await fetch(`${base}/api/lessons`, {
+    method: 'POST',
+    headers: { 'X-Teacher-Password': TEACHER_KEY },
+    body
+  });
   const data = await res.json();
   if (!res.ok) throw new Error(`upload failed ${res.status} ${JSON.stringify(data)}`);
   return data;
 }
 
-async function chat(base, message, lang, history) {
+async function chat(base, message, lang, history, lessonId) {
   const res = await fetch(`${base}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, lang, history: history || [] })
+    body: JSON.stringify({ message, lang, history: history || [], lessonId })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(`chat failed ${res.status} ${JSON.stringify(data)}`);
   return data.reply;
 }
 
+function teacherAuth() {
+  const previous = process.env.TEACHER_PASSWORD;
+  const { teacherAuthorized } = require('../lib/teacher-auth');
+  process.env.TEACHER_PASSWORD = TEACHER_KEY;
+  assert(teacherAuthorized(TEACHER_KEY), 'teacher password matches');
+  assert(!teacherAuthorized('nope'), 'wrong teacher password is refused');
+  assert(!teacherAuthorized(''), 'blank teacher password is refused');
+  process.env.TEACHER_PASSWORD = '   ';
+  assert(!teacherAuthorized(TEACHER_KEY), 'blank configured password stays locked');
+  delete process.env.TEACHER_PASSWORD;
+  assert(!teacherAuthorized(TEACHER_KEY), 'missing teacher password stays locked');
+  if (previous === undefined) delete process.env.TEACHER_PASSWORD;
+  else process.env.TEACHER_PASSWORD = previous;
+}
+
 function unit() {
+  teacherAuth();
   const lesson = analyzeLesson(NEWTON.slice(1).join('\n'), NEWTON[0]);
   assert(lesson.terms.some((term) => /force/i.test(term)), `terms include force: ${lesson.terms.join(', ')}`);
   assert(lesson.terms.some((term) => /mass/i.test(term)), 'terms include mass');
@@ -221,7 +249,7 @@ async function messageBodies(page) {
 
 async function chromeLeak(page, lang, label) {
   const strings = await page.evaluate(() => {
-    const skipIds = new Set(['excerpt', 'term-list', 'file-name', 'stage-title', 'active-title', 'title', 'composer-input']);
+    const skipIds = new Set(['excerpt', 'term-list', 'file-name', 'stage-title', 'active-title', 'title', 'composer-input', 'lesson-list', 'teacher-lessons', 'teacher-password']);
     const chunks = [];
     function banned(el) {
       for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
@@ -282,6 +310,9 @@ async function browserCheck(base, pdfPath) {
     });
     assert(await page.$eval('html', (el) => el.dir) === 'rtl', 'page opens in Arabic RTL');
     assert((await page.$eval('.brand h1', (el) => el.textContent)).includes('المرصد'), 'Arabic brand');
+    await page.waitForSelector('#lesson-picker:not([hidden])');
+    assert(await page.$eval('#composer', (el) => el.hidden), 'chat waits until a lesson is chosen');
+    assert(await page.$eval('#teacher-view', (el) => el.hidden), 'student bench opens without the teacher door');
     await chromeLeak(page, 'ar', 'student empty and teacher copy');
 
     await page.click('[data-lang="en"]');
@@ -296,7 +327,19 @@ async function browserCheck(base, pdfPath) {
     await chromeLeak(page, 'en', 'back to english');
 
     await page.click('[data-mode="teacher"]');
+    await page.waitForSelector('#teacher-password', { visible: true });
+    assert(await page.$eval('#teacher-bench', (el) => el.hidden), 'teacher bench stays locked');
+    await page.$eval('#teacher-password', (el) => { el.value = 'nope'; });
+    await page.click('#unlock');
+    await page.waitForFunction(() => /password|المرور/.test(document.querySelector('#toast').textContent || ''));
+    assert(
+      await page.$eval('#toast', (el) => el.textContent) === 'That password does not open the teacher bench.',
+      'wrong password stays out'
+    );
+    await page.$eval('#teacher-password', (el, key) => { el.value = key; }, TEACHER_KEY);
+    await page.click('#unlock');
     await page.waitForSelector('#pdf', { visible: true });
+    assert(await page.$eval('#save', (el) => el.textContent) === 'Add lesson', 'add lesson label');
     await page.click('#save');
     assert(await page.$eval('#toast', (el) => el.textContent) === 'Choose a PDF first.', 'English missing-file status');
     await chromeLeak(page, 'en', 'english error status');
@@ -314,25 +357,33 @@ async function browserCheck(base, pdfPath) {
     await page.waitForFunction(() => /accelerat/i.test(document.querySelector('#excerpt').textContent || ''));
     assert(/F\s*=\s*ma/i.test(await page.$eval('#excerpt', (el) => el.textContent)), 'extracted text keeps the equation for the teacher');
     assert(
-      await page.$eval('#toast', (el) => el.textContent) === 'Saved. Student talk is now only about this lesson.',
+      await page.$eval('#toast', (el) => el.textContent) === 'Added. Earlier lessons are still saved.',
       'English save status'
     );
+    assert(await page.$eval('#save', (el) => el.textContent) === 'Add lesson', 'add lesson label after save');
     await chromeLeak(page, 'en', 'teacher after save');
     await page.screenshot({ path: path.join(mediaDir, 'teacher-bench.png') });
     await page.click('[data-lang="ar"]');
     assert(
-      await page.$eval('#toast', (el) => el.textContent) === 'تم الحفظ. حديث الطلاب الآن عن هذا الدرس فقط.',
-      'Arabic save status replaces the English line'
+      await page.$eval('#toast', (el) => el.textContent) === 'تمت الإضافة. الدروس السابقة ما زالت محفوظة.',
+      'Arabic save status follows the language'
     );
+    assert(await page.$eval('#save', (el) => el.textContent) === 'إضافة درس', 'Arabic add lesson label');
     await chromeLeak(page, 'ar', 'teacher arabic status');
     await page.click('[data-lang="en"]');
     assert(
-      await page.$eval('#toast', (el) => el.textContent) === 'Saved. Student talk is now only about this lesson.',
+      await page.$eval('#toast', (el) => el.textContent) === 'Added. Earlier lessons are still saved.',
       'English save status returns'
     );
     await chromeLeak(page, 'en', 'teacher english status returns');
 
     await page.click('[data-mode="student"]');
+    assert(await page.$eval('#composer', (el) => el.hidden), 'student still picks a lesson before chat');
+    await page.evaluate(() => {
+      const button = [...document.querySelectorAll('#lesson-list .lesson-pick')].find((el) => /Newton/.test(el.textContent));
+      if (!button) throw new Error('missing Newton lesson');
+      button.click();
+    });
     await page.waitForFunction(() => {
       const node = document.querySelector('.bubble.tutor');
       return node && /Newton/.test(node.textContent) && /[?]/.test(node.textContent);
@@ -422,65 +473,118 @@ async function main() {
   await writePdf(wavePdf, WAVES);
   if (fs.existsSync(arabicFont)) await writePdf(arabicPdf, NEWTON_AR, arabicFont);
 
-  const lessonPath = path.join(os.tmpdir(), `orrery-lesson-${process.pid}.json`);
+  const lessonDir = path.join(os.tmpdir(), `orrery-lessons-${process.pid}`);
+  fs.mkdirSync(lessonDir, { recursive: true });
+  const legacyPath = path.join(lessonDir, 'lesson.json');
+  const legacyBody = JSON.stringify({
+    title: 'Legacy Interference',
+    text: 'Interference of light appears when waves from two slits meet and bright bands form on a screen far away.',
+    pages: 9,
+    filename: 'legacy.pdf',
+    savedAt: '2020-01-01T00:00:00.000Z'
+  });
+  fs.writeFileSync(legacyPath, legacyBody);
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
-  let child = await startServer(port, lessonPath);
+  let child = await startServer(port, lessonDir);
   try {
+    const locked = await fetch(`${base}/api/lessons`, { method: 'POST' });
+    assert(locked.status === 401, 'adding a lesson requires the teacher password');
+    const wrong = await fetch(`${base}/api/teacher/unlock`, {
+      method: 'POST',
+      headers: { 'X-Teacher-Password': 'nope' }
+    });
+    assert(wrong.status === 401, 'wrong teacher password is refused by the door');
+    const opened = await fetch(`${base}/api/teacher/unlock`, {
+      method: 'POST',
+      headers: { 'X-Teacher-Password': TEACHER_KEY }
+    });
+    assert(opened.status === 200, 'teacher door opens with the configured password');
+
     const saved = await upload(base, newtonPdf, "Newton's Second Law");
+    const newtonId = saved.lesson.id;
     assert(/net force/i.test(saved.lesson.text), 'PDF text extracted');
     assert(/F\s*=\s*ma/i.test(saved.lesson.text), 'equation text extracted from the PDF');
     assert(saved.lesson.terms.some((term) => /force/i.test(term)), 'saved lesson exposes terms');
 
-    const hidden = await (await fetch(`${base}/api/lesson`)).json();
-    assert(!hidden.text, 'student lesson payload omits the full text');
-    assert(hidden.title === "Newton's Second Law", 'public lesson keeps the title');
+    const hidden = await (await fetch(`${base}/api/lessons`)).json();
+    assert(hidden.lessons.every((item) => !item.text), 'student lesson list omits the full text');
+    assert(hidden.lessons.some((item) => item.id === newtonId && item.title === "Newton's Second Law"), 'public list keeps the Newton lesson');
+    assert(hidden.lessons.some((item) => item.title === 'Legacy Interference'), 'older single lesson is imported');
+    assert(fs.readFileSync(legacyPath, 'utf8') === legacyBody, 'original lesson file stays in place');
+    const concealed = await (await fetch(`${base}/api/lessons/${newtonId}?view=teacher`)).json();
+    assert(!concealed.lesson.text, 'teacher text stays hidden without the password');
+    const revealed = await (await fetch(`${base}/api/lessons/${newtonId}?view=teacher`, {
+      headers: { 'X-Teacher-Password': TEACHER_KEY }
+    })).json();
+    assert(/net force/i.test(revealed.lesson.text), 'teacher text opens with the password');
 
-    const refused = await chat(base, 'What is the answer?', 'en');
+    const missing = await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'hello', lang: 'en' })
+    });
+    assert(missing.status === 409, 'chat waits for a chosen lesson');
+
+    const refused = await chat(base, 'What is the answer?', 'en', [], newtonId);
     assert(/will not give you the answer/i.test(refused) && /\?/.test(refused), `API refuses: ${refused}`);
     assert(!/=/.test(refused), 'API reply has no equation');
+    assert(/Newton|second law/i.test(refused), 'refusal stays inside the chosen lesson');
 
-    const arabic = await chat(base, 'أعطني المعادلة', 'ar');
+    const arabic = await chat(base, 'أعطني المعادلة', 'ar', [], newtonId);
     assert(/لن أعطيك الإجابة/.test(arabic) && /؟/.test(arabic), `API refuses in Arabic: ${arabic}`);
 
+    let arabicId = '';
     if (fs.existsSync(arabicPdf)) {
       const arSaved = await upload(base, arabicPdf, 'قانون نيوتن الثاني');
+      arabicId = arSaved.lesson.id;
+      assert(arabicId !== newtonId, 'Arabic upload is a new lesson');
       assert(/[\u0600-\u06FF]/.test(arSaved.lesson.text), 'Arabic PDF yields Arabic text');
       assert(/قوة|نيوتن|تسارع/.test(arSaved.lesson.text), `Arabic words extracted: ${arSaved.lesson.text.slice(0, 180)}`);
-      const arReply = await chat(base, 'ما هي الإجابة؟', 'ar');
+      const arReply = await chat(base, 'ما هي الإجابة؟', 'ar', [], arabicId);
       assert(/لن أعطيك الإجابة/.test(arReply), `Arabic lesson still refuses: ${arReply}`);
       assert(!/=/.test(arReply) && !/يساوي/.test(arReply), 'Arabic reply has no equation');
     }
 
     const waves = await upload(base, wavePdf, 'Wave Basics');
-    assert(/wavelength/i.test(waves.lesson.text), 'replacement lesson extracted');
-    const back = await chat(base, 'Tell me about the world cup and Newton', 'en');
-    assert(/outside/i.test(back), `off topic after switch: ${back}`);
-    assert(/wave/i.test(back), `new lesson is the active topic: ${back}`);
-    assert(!/second law/i.test(back), 'old lesson title is not the active topic');
+    const waveId = waves.lesson.id;
+    assert(waveId !== newtonId, 'wave upload does not replace the Newton lesson');
+    assert(/wavelength/i.test(waves.lesson.text), 'added lesson extracted');
+    const back = await chat(base, 'Tell me about the world cup and Newton', 'en', [], waveId);
+    assert(/outside/i.test(back), `off topic stays outside: ${back}`);
+    assert(/wave/i.test(back), `chosen lesson is the topic: ${back}`);
+    assert(!/second law/i.test(back), 'the other lesson title stays out of this talk');
+    const stillNewton = await (await fetch(`${base}/api/lessons/${newtonId}`)).json();
+    assert(stillNewton.lesson.title === "Newton's Second Law", 'Newton lesson remains after a later add');
 
     await stopServer(child);
-    child = await startServer(port, lessonPath);
-    const kept = await (await fetch(`${base}/api/lesson`)).json();
-    assert(kept.title === 'Wave Basics', `lesson survives restart: ${kept.title}`);
+    child = await startServer(port, lessonDir);
+    const kept = await (await fetch(`${base}/api/lessons`)).json();
+    assert(kept.lessons.some((item) => item.id === waveId), 'wave lesson survives restart');
+    assert(kept.lessons.some((item) => item.id === newtonId), 'Newton lesson survives restart');
+    if (arabicId) assert(kept.lessons.some((item) => item.id === arabicId), 'Arabic lesson survives restart');
 
     await browserCheck(base, newtonPdf);
-    const afterUi = await (await fetch(`${base}/api/lesson`)).json();
-    assert(afterUi.title === "Newton's Second Law", 'UI save replaced the active lesson');
+    const afterUi = await (await fetch(`${base}/api/lessons`)).json();
+    assert(afterUi.lessons.filter((item) => item.title === 'Wave Basics').length === 1, 'earlier wave lesson stays');
+    assert(afterUi.lessons.filter((item) => item.title === "Newton's Second Law").length >= 2, 'adding a lesson keeps the earlier copy');
+    assert(afterUi.lessons.some((item) => item.title === 'Legacy Interference'), 'imported lesson stays in the catalog');
 
     const scan = path.join(samples, 'Physics_Grade_10_Advanced_filtered.pdf');
     if (fs.existsSync(scan)) {
       const scanned = await upload(base, scan, 'Incoherent and Coherent Light');
       assert(/coherent light/i.test(scanned.lesson.text), 'scan OCR finds the lesson prose');
       assert(/interference|wavelength|refraction/i.test(scanned.lesson.text), 'scan OCR finds physics ideas');
-      const guided = await chat(base, 'What is the answer?', 'en');
+      const guided = await chat(base, 'What is the answer?', 'en', [], scanned.lesson.id);
       assert(/will not give you the answer/i.test(guided) && /\?/.test(guided), `scan lesson still refuses: ${guided}`);
       assert(!/=/.test(guided), 'scan lesson reply has no equation');
+      const afterScan = await (await fetch(`${base}/api/lessons`)).json();
+      assert(afterScan.lessons.some((item) => item.id === waveId), 'scan save leaves earlier lessons in place');
     }
     console.log('all checks passed');
   } finally {
     await stopServer(child);
-    fs.rmSync(lessonPath, { force: true });
+    fs.rmSync(lessonDir, { recursive: true, force: true });
   }
 }
 
