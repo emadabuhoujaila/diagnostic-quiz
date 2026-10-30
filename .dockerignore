@@ -6,3 +6,4 @@ scripts
 *.log
 *.md
 deploy.cmd
+cloudbuild.yaml

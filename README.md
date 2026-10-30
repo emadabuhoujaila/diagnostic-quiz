@@ -29,7 +29,7 @@ cd diagnostic-quiz
 deploy.cmd
 ```
 
-The script deploys to `me-central1` (Doha). If Cloud Run does not list that region, it uses `europe-west1`. It prints the student URL when the deploy finishes.
+The service runs in `me-central1` (Doha). If Cloud Run does not list that region, it uses `europe-west1`. The image is built in the service region, and the build logs stay in that region. If that build fails, the script builds in `europe-west1` and deploys that image. It prints the student URL when the deploy finishes.
 
 Try the sample sheets in `samples/` after you run `npm run verify` once. A PDF with a text layer is read directly. A scanned, image-only PDF is read on this machine with Poppler and Tesseract (`poppler-utils`, `tesseract-ocr`, `tesseract-ocr-eng`, `tesseract-ocr-ara`). That path does not need an API key.
 
