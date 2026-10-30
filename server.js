@@ -59,10 +59,15 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, gemini: geminiConfigured() });
 });
 
-app.get('/api/lesson', (req, res) => {
-  const record = read();
-  const withText = req.query.view === 'teacher';
-  res.json(publicLesson(record, withText));
+app.get('/api/lesson', async (req, res) => {
+  try {
+    const record = await read();
+    const withText = req.query.view === 'teacher';
+    res.json(publicLesson(record, withText));
+  } catch (err) {
+    console.error('Lesson read failed');
+    res.status(500).json({ error: 'server' });
+  }
 });
 
 app.post('/api/lesson', upload.single('file'), async (req, res) => {
@@ -81,7 +86,7 @@ app.post('/api/lesson', upload.single('file'), async (req, res) => {
       return res.status(422).json({ error: 'empty-pdf' });
     }
 
-    const record = save({
+    const record = await save({
       title,
       text: extracted.text.slice(0, 100000),
       pages: extracted.pages,
@@ -90,6 +95,10 @@ app.post('/api/lesson', upload.single('file'), async (req, res) => {
     });
     res.json({ ok: true, lesson: publicLesson(record, true) });
   } catch (err) {
+    if (err && (err.message === 'lesson-save' || err.message === 'lesson-storage')) {
+      console.error('Lesson save failed');
+      return res.status(500).json({ error: 'server' });
+    }
     console.error(err);
     res.status(422).json({ error: 'extract-failed' });
   }
@@ -124,7 +133,13 @@ function chatHistory(body) {
 }
 
 app.post('/api/chat', chatImagesMiddleware, async (req, res) => {
-  const record = read();
+  let record;
+  try {
+    record = await read();
+  } catch (err) {
+    console.error('Lesson read failed');
+    return res.status(500).json({ error: 'server' });
+  }
   if (!record) return res.status(409).json({ error: 'no-lesson' });
 
   const lang = req.body && req.body.lang === 'en' ? 'en' : 'ar';

@@ -17,7 +17,19 @@ Open http://localhost:3000
 2. Choose **Student / طالب** and talk. Asking for the answer gets a refusal and a smaller question.
 3. Switch **العربية / English**. Arabic is right-to-left.
 
-The saved lesson (title and extracted text) stays on disk in `data/lesson.json`, so a refresh keeps it.
+The saved lesson (title and extracted text) stays on disk in `data/lesson.json`, so a refresh keeps it. On Cloud Run that disk does not survive, so `deploy.cmd` stores the same file in Cloud Storage (`LESSON_BUCKET`) and puts `GEMINI_API_KEY` in Secret Manager. The key is entered when the script runs and is never written into this repo.
+
+## Cloud Run
+
+The Google account needs billing on project `orrery-tutor`. After `gcloud auth login`, paste this into Windows cmd:
+
+```bat
+git clone -b cursor/socratic-physics-tutor-250d https://github.com/emadabuhoujaila/diagnostic-quiz.git
+cd diagnostic-quiz
+deploy.cmd
+```
+
+The script deploys to `me-central1` (Doha). If Cloud Run does not list that region, it uses `europe-west1`. It prints the student URL when the deploy finishes.
 
 Try the sample sheets in `samples/` after you run `npm run verify` once. A PDF with a text layer is read directly. A scanned, image-only PDF is read on this machine with Poppler and Tesseract (`poppler-utils`, `tesseract-ocr`, `tesseract-ocr-eng`, `tesseract-ocr-ara`). That path does not need an API key.
 
