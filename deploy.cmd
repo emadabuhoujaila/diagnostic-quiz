@@ -149,7 +149,7 @@ if errorlevel 1 exit /b 1
 :built
 call gcloud artifacts repositories add-iam-policy-binding %REPO% --location=!IMAGE_REGION! --project=%PROJECT% --member=serviceAccount:%RUN_SA% --role=roles/artifactregistry.reader --quiet
 call gcloud artifacts repositories add-iam-policy-binding %REPO% --location=!IMAGE_REGION! --project=%PROJECT% --member=serviceAccount:service-!PROJECT_NUMBER!@serverless-robot-prod.iam.gserviceaccount.com --role=roles/artifactregistry.reader --quiet
-call gcloud run deploy %SERVICE% --image !IMAGE!:latest --project %PROJECT% --region !REGION! --service-account %RUN_SA% --allow-unauthenticated --quiet --memory 2Gi --cpu 1 --timeout 300 --concurrency 4 --max-instances 3 --port 8080 --set-secrets=GEMINI_API_KEY=%SECRET%:latest --set-env-vars=LESSON_BUCKET=%BUCKET%
+call gcloud run deploy %SERVICE% --image !IMAGE!:latest --project %PROJECT% --region !REGION! --service-account %RUN_SA% --allow-unauthenticated --quiet --memory 2Gi --cpu 2 --timeout 300 --concurrency 4 --max-instances 3 --port 8080 --set-secrets=GEMINI_API_KEY=%SECRET%:latest --set-env-vars=LESSON_BUCKET=%BUCKET%
 if errorlevel 1 exit /b 1
 
 echo Student URL:

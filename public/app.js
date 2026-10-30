@@ -43,6 +43,8 @@
       teacherName: 'المعلم: عماد أبو حجيلة',
       needFile: 'اختر ملف الدرس أولًا.',
       needTitle: 'اكتب عنوانًا للدرس.',
+      saving: 'جارٍ الحفظ…',
+      savingNote: 'جارٍ حفظ الدرس. قد يحتاج الملف المصوّر إلى دقيقة، ولن يتغير الزر حتى ينتهي.',
       savedOk: 'تم الحفظ. حديث الطلاب الآن عن هذا الدرس فقط.',
       chipLead: 'أريد أن أفكر في',
       errors: {
@@ -101,6 +103,8 @@
       teacherName: 'Teacher: Emad Abu Houjaila',
       needFile: 'Choose a PDF first.',
       needTitle: 'Give the lesson a title.',
+      saving: 'Saving…',
+      savingNote: 'Saving the lesson. A scanned file can take a minute, and the button stays busy until it finishes.',
       savedOk: 'Saved. Student talk is now only about this lesson.',
       chipLead: 'I want to think about',
       errors: {
@@ -125,7 +129,8 @@
     messages: [],
     file: null,
     pending: [],
-    busy: false
+    busy: false,
+    saving: false
   };
   let talkToken = 0;
   let toastTimer = 0;
@@ -182,7 +187,12 @@
       if (typeof text[key] === 'string') el.setAttribute('aria-label', text[key]);
     });
     const save = document.getElementById('save');
-    if (save) save.textContent = state.lesson ? text.replace : text.save;
+    if (save) {
+      save.textContent = state.saving ? text.saving : (state.lesson ? text.replace : text.save);
+      save.disabled = state.saving;
+      save.setAttribute('aria-busy', state.saving ? 'true' : 'false');
+    }
+    paintSaveStatus();
     const when = document.getElementById('active-when');
     if (when && state.lesson && state.lesson.savedAt) when.textContent = formatTime(state.lesson.savedAt);
     paintToast();
@@ -203,6 +213,26 @@
     el.textContent = lookupChrome(toastKey);
     el.dir = state.lang === 'ar' ? 'rtl' : 'ltr';
     el.classList.add('show');
+  }
+
+  let saveStatus = '';
+
+  function paintSaveStatus() {
+    const el = document.getElementById('save-status');
+    if (!el) return;
+    if (!saveStatus) {
+      el.hidden = true;
+      el.textContent = '';
+      return;
+    }
+    el.hidden = false;
+    el.textContent = lookupChrome(saveStatus);
+    el.dir = state.lang === 'ar' ? 'rtl' : 'ltr';
+  }
+
+  function setSaveStatus(code) {
+    saveStatus = code || '';
+    paintSaveStatus();
   }
 
   function toast(code) {
@@ -463,17 +493,26 @@
   }
 
   async function saveLesson() {
-    if (!state.file) return toast('needFile');
+    if (state.saving) return;
+    if (!state.file) {
+      setSaveStatus('needFile');
+      return toast('needFile');
+    }
     const title = document.getElementById('title').value.trim();
-    if (!title) return toast('needTitle');
+    if (!title) {
+      setSaveStatus('needTitle');
+      return toast('needTitle');
+    }
     talkToken += 1;
     const body = new FormData();
     body.append('file', state.file);
     body.append('title', title);
-    document.getElementById('save').disabled = true;
+    state.saving = true;
+    setSaveStatus('savingNote');
+    applyI18n();
     try {
       const res = await fetch('/api/lesson', { method: 'POST', body });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'server');
       state.lesson = data.lesson;
       state.messages = [];
@@ -481,12 +520,15 @@
       if (key) storeDel(key);
       renderMessages();
       renderTeacher(data.lesson);
-      applyI18n();
+      setSaveStatus('savedOk');
       toast('savedOk');
     } catch (err) {
-      toast(err.message);
+      const code = err && err.message ? err.message : 'server';
+      setSaveStatus(code);
+      toast(code);
     } finally {
-      document.getElementById('save').disabled = false;
+      state.saving = false;
+      applyI18n();
     }
   }
 
