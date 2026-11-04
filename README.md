@@ -2,6 +2,8 @@
 
 A bilingual Socratic physics bench for one teacher and a class. Emad Abu Houjaila adds lesson PDFs. A student picks one lesson, and the talk stays inside it. The tutor asks questions and never gives the answer, the final result, or a ready equation.
 
+A seeded lesson, Thin-Film Interference, is already in the catalog. Its questions, clues, and life bridges follow that deck in order: soap colors, the thin film, phase inversion, path difference, adding or cancelling, one bubble, structural color, anti-reflective coatings, then a solar coating.
+
 The no-answer rule is enforced in `lib/guard.js` after every reply, including a model reply. Set `GEMINI_API_KEY` or `GOOGLE_API_KEY` to use Gemini (`gemini-3.8-flash`) for a deeper question that can discuss an attached image and then return to the lesson. With neither key set, the page still runs and waits for one. The key is never written into the code.
 
 ## Run
@@ -18,7 +20,7 @@ Open http://localhost:3000
 3. Choose **Student / طالب**, pick a lesson, and talk. Asking for the answer gets a refusal and a smaller question.
 4. Switch **العربية / English**. Arabic is right-to-left.
 
-Saved lessons stay in `data/lessons/`. A refresh keeps the list, and the student returns to the lesson they picked. On Cloud Run that disk does not survive, so `deploy.cmd` stores each lesson in Cloud Storage (`LESSON_BUCKET`, under `lessons/`). An older single `lesson.json` is copied into that list the first time the catalog is empty, and the original object is left in place. `deploy.cmd` asks for `GEMINI_API_KEY` and the teacher password, stores both in Secret Manager, and sets them on Cloud Run. Neither value is written into this repo.
+Saved lessons stay in `data/lessons/`. A refresh keeps the list, and the student returns to the lesson they picked. On Cloud Run that disk does not survive, so `deploy.cmd` stores each lesson in Cloud Storage (`LESSON_BUCKET`, under `lessons/`). An older single `lesson.json` is copied into that list the first time the catalog is empty, and the original object is left in place. The seeded Thin-Film Interference lesson is added the same way when that title is not already saved, and a later lesson does not replace it. `deploy.cmd` asks for `GEMINI_API_KEY` and the teacher password, stores both in Secret Manager, and sets them on Cloud Run. Neither value is written into this repo.
 
 ## Cloud Run
 

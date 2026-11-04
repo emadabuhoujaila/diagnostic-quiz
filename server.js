@@ -37,8 +37,20 @@ function teacherPassword(req) {
   return req.get('x-teacher-password');
 }
 
-function summary(record, withText) {
+function tutorLesson(record) {
   const lesson = analyzeLesson(record.text, record.title);
+  const steps = Array.isArray(record && record.path) ? record.path : [];
+  if (!steps.length) return lesson;
+  lesson.path = steps;
+  const terms = steps
+    .map((beat) => beat && beat.term)
+    .filter((term) => typeof term === 'string' && term.trim());
+  if (terms.length) lesson.terms = terms.slice(0, 8);
+  return lesson;
+}
+
+function summary(record, withText) {
+  const lesson = tutorLesson(record);
   const payload = {
     id: record.id,
     title: record.title,
@@ -171,7 +183,7 @@ app.post('/api/chat', chatImagesMiddleware, async (req, res) => {
   const lang = req.body && req.body.lang === 'en' ? 'en' : 'ar';
   const message = String((req.body && req.body.message) || '').slice(0, 2000);
   const images = chatImagesFrom(req);
-  const lesson = analyzeLesson(record.text, record.title);
+  const lesson = tutorLesson(record);
   const safe = await tutorTurn({
     lesson,
     history: chatHistory(req.body),

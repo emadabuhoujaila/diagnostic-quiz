@@ -1,0 +1,144 @@
+{
+  "title": "Thin-Film Interference",
+  "filename": "Thin-Film_Interference.pdf",
+  "pages": 11,
+  "savedAt": "2026-11-05T06:00:00.000Z",
+  "text": "Thin-Film Interference. Walk this lesson in order.\n\nColors appear on a soap bubble and on a thin oil slick even though there is no pigment and no paint.\n\nA thin film is a layer about as thin as a wavelength of light. The skin of a soap bubble and an oil slick are films. Ordinary glass is much thicker.\n\nPhase inversion can happen when a light wave reflects at a boundary. One ray reflects at the outer surface. Another ray meets the inner surface. A pulse on a light rope changes in one way when it hits a heavier rope, and in another way when it hits a lighter rope.\n\nPath difference: the inner ray crosses the film and comes back, so its road is longer than the outer ray. One friend turns back at the gate, and the other walks into the garden and returns.\n\nConstructive interference is waves in step adding toward a brighter result. Destructive interference is waves out of step cancelling toward darkness. A single change at one boundary can move which case you meet. Two people clapping on the same beat sound strong. Two people clapping on opposite beats fade.\n\nOne soap bubble is not equally thin everywhere. White light carries many wavelengths at once, so one color can be strong at one point and gone a short distance away. The swirl of color slides as your eye moves.\n\nStructural color: a tiger beetle can look green because thin layers reflect light, with no green pigment, the same surprise as the soap bubble.\n\nAnti-reflective coatings on glasses and camera lenses quiet the light that bounces back, so more light passes through.\n\nA solar coating on a solar panel cuts reflection. More daylight stays in the panel, and that can mean cleaner energy.\n\nتداخل الأغشية الرقيقة. سر على هذا الترتيب.\n\nتظهر ألوان على فقاعة الصابون وعلى بقعة زيت رقيقة مع أنه لا صبغة ولا طلاء.\n\nالغشاء الرقيق طبقة تقارب طول موجة الضوء. جلد فقاعة الصابون وبقعة الزيت غشاءان. زجاج النافذة أسمك بكثير.\n\nانقلاب الطور قد يحدث حين تنعكس موجة الضوء عند حد. شعاع ينعكس عند السطح الخارجي، وشعاع يلتقي السطح الداخلي. نبضة على حبل خفيف تتغير بشكل حين تصدم حبلًا أثقل، وبشكل آخر حين تصدم حبلًا أخف.\n\nفرق المسار: الشعاع الداخلي يعبر الغشاء ثم يعود، فطريقه أطول من الشعاع الخارجي. صديق يرجع عند الباب، وصديق يدخل الحديقة ثم يعود.\n\nالتداخل البناء موجات متوافقة تبني نحو سطوع. التداخل الهدام موجات متعاكسة تلغي نحو العتمة. تغيّر واحد عند حد واحد قد ينقل الحالة التي تلاقيها. شخصان يصفقان على النبضة نفسها يبدوان أقوى. اثنان يصفقان على نبضتين متعاكستين يخفتان.\n\nفقاعة الصابون الواحدة ليست بالرقة نفسها في كل موضع. الضوء الأبيض يحمل أطوالًا موجية كثيرة، فقد يقوى لون في نقطة ويغيب على مسافة قصيرة. دوامة الألوان تتبدل كلما تحركت العين.\n\nاللون البنيوي: قد تبدو خنفساء النمر خضراء لأن طبقات رقيقة تعكس الضوء، بلا صباغ أخضر، وهي مفاجأة فقاعة الصابون نفسها.\n\nطلاء يقلل الانعكاس على النظارة وعدسة الكاميرا يهدّئ الضوء المرتد، فيمر ضوء أكثر.\n\nطلاء شمسي على لوح شمسي يقلل الانعكاس. يبقى قدر أكبر من ضوء النهار في اللوح، وقد يعني ذلك طاقة أنظف.",
+  "path": [
+    {
+      "term": "soap colors",
+      "en": {
+        "idea": "Colors show on a soap bubble even though the bubble holds no pigment.",
+        "clue": "The color is not paint sitting on the surface.",
+        "bridge": "Picture a soap bubble in the sink, or a thin slick of oil on a wet road.",
+        "ask": "Where have you seen colors on something clear that was never dyed?"
+      },
+      "ar": {
+        "idea": "تظهر ألوان على فقاعة الصابون مع أن الفقاعة بلا صبغة.",
+        "clue": "اللون هنا ليس طلاءً على السطح.",
+        "bridge": "تخيّل فقاعة صابون في المغسلة، أو طبقة زيت رقيقة على طريق مبلول.",
+        "ask": "أين رأيت ألوانًا على شيء شفاف لم يُصبغ؟"
+      }
+    },
+    {
+      "term": "thin film",
+      "en": {
+        "idea": "A thin film is a layer about as thin as a wavelength of light.",
+        "clue": "Ordinary window glass is much thicker than this skin.",
+        "bridge": "The skin of a soap bubble and an oil slick are films this thin.",
+        "ask": "What feels different about a layer that thin compared with a pane of glass you can hold?"
+      },
+      "ar": {
+        "idea": "الغشاء الرقيق طبقة تقارب في الرقة طول موجة الضوء.",
+        "clue": "زجاج النافذة أسمك بكثير من هذا الجلد.",
+        "bridge": "جلد فقاعة الصابون وبقعة الزيت غشاءان بهذه الرقة.",
+        "ask": "ما الذي يختلف حين تكون الطبقة بهذه الرقة مقارنة بلوح زجاج تمسكه بيدك؟"
+      }
+    },
+    {
+      "term": "phase inversion",
+      "en": {
+        "idea": "A light wave can reflect at a boundary with a denser medium or with a lighter one.",
+        "clue": "A pulse on a light rope does one thing when it hits a heavier rope, and another when it hits a lighter rope.",
+        "bridge": "One ray reflects at the outer surface of the film, and another meets the inner surface.",
+        "ask": "Which of those two reflections do you suspect changes the wave, and which one does not?"
+      },
+      "ar": {
+        "idea": "قد تنعكس موجة الضوء عند حد مع وسط أكثف أو مع وسط أخف.",
+        "clue": "نبضة على حبل خفيف تفعل شيئًا حين تصدم حبلًا أثقل، وشيئًا آخر حين تصدم حبلًا أخف.",
+        "bridge": "شعاع ينعكس عند السطح الخارجي للغشاء، وشعاع آخر يلتقي السطح الداخلي.",
+        "ask": "أي الانعكاسين تظن أنه يغيّر الموجة، وأيهما لا يغيّرها؟"
+      }
+    },
+    {
+      "term": "path difference",
+      "en": {
+        "idea": "The inner ray does not travel the same road as the outer ray.",
+        "clue": "The inner ray crosses the film and comes back, so its road is the longer one.",
+        "bridge": "Two friends leave together: one turns back at the gate, and the other walks into the garden and returns.",
+        "ask": "What extra part of the trip belongs only to the ray that goes inside?"
+      },
+      "ar": {
+        "idea": "الشعاع الداخلي لا يسلك الطريق نفسه الذي يسلكه الشعاع الخارجي.",
+        "clue": "الشعاع الداخلي يعبر الغشاء ثم يعود، فطريقه هو الأطول.",
+        "bridge": "صديقان يخرجان معًا: واحد يرجع عند الباب، والآخر يدخل الحديقة ثم يعود.",
+        "ask": "أي جزء زائد من الرحلة يخص الشعاع الذي يدخل إلى الداخل فقط؟"
+      }
+    },
+    {
+      "term": "adding or cancelling",
+      "en": {
+        "idea": "Waves in step can build a brighter result, and waves out of step can fade toward darkness.",
+        "clue": "One change at a single boundary can move which of those two you meet.",
+        "bridge": "Two people clapping on the same beat sound strong, and two people clapping on opposite beats fade.",
+        "ask": "If only one of the two rays is changed at the boundary, how might that move the bright case and the dark case?"
+      },
+      "ar": {
+        "idea": "الموجات المتوافقة قد تبني نتيجة أسطع، والموجات المتعاكسة قد تخفت نحو العتمة.",
+        "clue": "تغيّر واحد عند حد واحد قد ينقل أي الحالتين تلاقي.",
+        "bridge": "شخصان يصفقان على النبضة نفسها يبدوان أقوى، واثنان يصفقان على نبضتين متعاكستين يخفتان.",
+        "ask": "إذا تغيّر شعاع واحد فقط عند الحد، فكيف قد يتحرك موضع السطوع وموضع العتمة؟"
+      }
+    },
+    {
+      "term": "one bubble",
+      "en": {
+        "idea": "White light carries many wavelengths at once, and a bubble is not equally thin everywhere.",
+        "clue": "A color that is strong at one point can fade a short distance away on the same bubble.",
+        "bridge": "Watch the swirl on one soap bubble: the hue slides as your eye moves.",
+        "ask": "What is different about the film from one point to the next that could let one color show and another disappear?"
+      },
+      "ar": {
+        "idea": "الضوء الأبيض يحمل أطوالًا موجية كثيرة معًا، والفقاعة ليست بالرقة نفسها في كل موضع.",
+        "clue": "لون قوي في نقطة قد يخبو على مسافة قصيرة من الفقاعة نفسها.",
+        "bridge": "راقب دوامة الألوان على فقاعة واحدة: تتبدل الصبغة كلما تحركت عينك.",
+        "ask": "ما الذي يختلف في الغشاء من نقطة إلى أخرى حتى يظهر لون ويختفي آخر؟"
+      }
+    },
+    {
+      "term": "structural color",
+      "en": {
+        "idea": "Some animals shine with color built by thin layers, not by a pigment.",
+        "clue": "The tiger beetle can look green while no green dye is in the shell.",
+        "bridge": "The beetle and the soap bubble are the same kind of surprise: color without paint.",
+        "ask": "If the layers send reflections that build together, what kind of color is that green?"
+      },
+      "ar": {
+        "idea": "بعض الكائنات تلمع بلون تبنيه طبقات رقيقة، لا صبغة.",
+        "clue": "قد تبدو خنفساء النمر خضراء من غير صباغ أخضر في القشرة.",
+        "bridge": "الخنفساء وفقاعة الصابون مفاجأة من النوع نفسه: لون بلا طلاء.",
+        "ask": "إذا أرسلت الطبقات انعكاسات تبني بعضها بعضًا، فأي نوع من اللون يكون هذا الأخضر؟"
+      }
+    },
+    {
+      "term": "anti-reflective",
+      "en": {
+        "idea": "A coating on a lens can quiet the light that bounces back.",
+        "clue": "The two reflections are arranged so they work against each other.",
+        "bridge": "Think of glasses or a camera lens that seems to glare less.",
+        "ask": "If less light bounces off the coating, what becomes of the light that does not bounce away?"
+      },
+      "ar": {
+        "idea": "طلاء على عدسة قد يهدّئ الضوء الذي يرتد.",
+        "clue": "الانعكاسان يُرتبان بحيث يعملان ضد بعضهما.",
+        "bridge": "فكّر في نظارة أو عدسة كاميرا يبدو وهجها أقل.",
+        "ask": "إذا ارتد ضوء أقل عن الطلاء، فماذا يحدث للضوء الذي لم يرتد؟"
+      }
+    },
+    {
+      "term": "solar coating",
+      "en": {
+        "idea": "A solar panel loses some light when the surface reflects it away.",
+        "clue": "A coating that cuts reflection leaves more light for the panel to keep.",
+        "bridge": "Picture a panel in the sun whose glare is dimmer, so more of the daylight stays in the panel.",
+        "ask": "What does keeping that light change for the energy the panel can make, and why might cleaner energy matter?"
+      },
+      "ar": {
+        "idea": "اللوح الشمسي يفقد بعض الضوء حين يعكسه السطح بعيدًا.",
+        "clue": "طلاء يقلل الانعكاس يبقي ضوءًا أكثر للوح.",
+        "bridge": "تخيّل لوحًا في الشمس وهجه أخفت، فيبقى قدر أكبر من ضوء النهار داخل اللوح.",
+        "ask": "ماذا يغيّر بقاء هذا الضوء في الطاقة التي يصنعها اللوح، ولماذا قد تهم طاقة أنظف؟"
+      }
+    }
+  ]
+}

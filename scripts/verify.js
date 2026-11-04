@@ -225,6 +225,43 @@ function unit() {
     lang: 'en'
   });
   assert(!/greater force to reach/i.test(quoted), 'does not repeat the student-copied answer');
+
+  const seed = JSON.parse(fs.readFileSync(path.join(root, 'seeds', 'thin-film-interference.json'), 'utf8'));
+  const filmLesson = analyzeLesson(seed.text, seed.title);
+  filmLesson.path = seed.path;
+  const filmOpen = reply({ lesson: filmLesson, history: [], message: '', lang: 'en' });
+  assert(/soap|bubble/i.test(filmOpen) && /color/i.test(filmOpen), `thin film opens on bubble colors: ${filmOpen}`);
+  assert(!/solar|beetle|lens/i.test(filmOpen), `opening stays on the first idea: ${filmOpen}`);
+  assert(/\?/.test(filmOpen) && !/=/.test(filmOpen) && !/the answer is/i.test(filmOpen), 'opening gives no answer');
+  const filmRefusal = reply({ lesson: filmLesson, history: [], message: 'What is the answer?', lang: 'en' });
+  assert(/will not give you the answer/i.test(filmRefusal) && /soap|bubble|color/i.test(filmRefusal), `thin film refusal stays on the first idea: ${filmRefusal}`);
+  assert(!/solar|beetle/i.test(filmRefusal) && !/=/.test(filmRefusal), 'refusal gives no later result');
+  const filmArabic = reply({ lesson: filmLesson, history: [], message: 'ما هي الإجابة؟', lang: 'ar' });
+  assert(/لن أعطيك الإجابة/.test(filmArabic) && /؟/.test(filmArabic) && /فقاعة|صابون/.test(filmArabic), `Arabic thin film refusal: ${filmArabic}`);
+  const filmOutside = reply({ lesson: filmLesson, history: [], message: 'Who won the world cup?', lang: 'en' });
+  assert(/outside/i.test(filmOutside) && /soap|bubble|color/i.test(filmOutside) && !/solar/i.test(filmOutside), `off topic returns to the first idea: ${filmOutside}`);
+  const stepMarks = [
+    /film|wavelength|glass/i,
+    /rope|outer|inner/i,
+    /garden|gate|inside/i,
+    /clap|bright|dark/i,
+    /swirl|hue|point/i,
+    /beetle|green/i,
+    /lens|glare|glasses/i,
+    /solar|panel/i
+  ];
+  let filmHistory = [{ role: 'tutor', text: filmOpen }];
+  stepMarks.forEach((pattern, index) => {
+    const message = index === 0 ? 'I saw colors on a soap bubble' : 'The film still changes what I notice';
+    const text = reply({ lesson: filmLesson, history: filmHistory, message, lang: 'en' });
+    assert(pattern.test(text), `thin film step ${index + 1}: ${text}`);
+    assert(!/=/.test(text) && !/the answer is/i.test(text) && !/\b2\s*d\b/i.test(text), `step gives no equation: ${text}`);
+    if (index < 5) assert(!/solar|beetle/i.test(text), `early step stays before the applications: ${text}`);
+    filmHistory = filmHistory.concat([
+      { role: 'student', text: message },
+      { role: 'tutor', text }
+    ]);
+  });
   console.log('unit checks passed');
 }
 
@@ -311,6 +348,7 @@ async function browserCheck(base, pdfPath) {
     assert(await page.$eval('html', (el) => el.dir) === 'rtl', 'page opens in Arabic RTL');
     assert((await page.$eval('.brand h1', (el) => el.textContent)).includes('المرصد'), 'Arabic brand');
     await page.waitForSelector('#lesson-picker:not([hidden])');
+    assert(/Thin-Film Interference/.test(await page.$eval('#lesson-list', (el) => el.textContent)), 'student can choose Thin-Film Interference');
     assert(await page.$eval('#composer', (el) => el.hidden), 'chat waits until a lesson is chosen');
     assert(await page.$eval('#teacher-view', (el) => el.hidden), 'student bench opens without the teacher door');
     await chromeLeak(page, 'ar', 'student empty and teacher copy');
@@ -511,6 +549,12 @@ async function main() {
     assert(hidden.lessons.every((item) => !item.text), 'student lesson list omits the full text');
     assert(hidden.lessons.some((item) => item.id === newtonId && item.title === "Newton's Second Law"), 'public list keeps the Newton lesson');
     assert(hidden.lessons.some((item) => item.title === 'Legacy Interference'), 'older single lesson is imported');
+    const film = hidden.lessons.find((item) => item.title === 'Thin-Film Interference');
+    assert(film && film.terms && film.terms[0] === 'soap colors', 'seeded thin-film lesson follows the deck order');
+    assert(!film.text, 'seeded lesson list hides the lesson text');
+    const filmRefusalApi = await chat(base, 'What is the answer?', 'en', [], film.id);
+    assert(/will not give you the answer/i.test(filmRefusalApi) && /soap|bubble|color/i.test(filmRefusalApi), `seeded lesson refuses: ${filmRefusalApi}`);
+    assert(!/=/.test(filmRefusalApi) && !/solar|beetle/i.test(filmRefusalApi), 'seeded refusal stays on the first idea');
     assert(fs.readFileSync(legacyPath, 'utf8') === legacyBody, 'original lesson file stays in place');
     const concealed = await (await fetch(`${base}/api/lessons/${newtonId}?view=teacher`)).json();
     assert(!concealed.lesson.text, 'teacher text stays hidden without the password');

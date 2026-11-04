@@ -16,6 +16,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY server.js ./
 COPY lib ./lib
 COPY public ./public
+COPY seeds ./seeds
 
 RUN mkdir -p /app/data && chown -R node:node /app
 
